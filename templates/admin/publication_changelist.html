@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+    <li>
+        <form method="post" action="{% url 'admin:import_doi' %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="text" name="doi" placeholder="Enter DOI..." style="padding:5px; width:250px;">
+            <button type="submit" class="button">Import from DOI</button>
+        </form>
+    </li>
+    {{ block.super }}
+{% endblock %}
