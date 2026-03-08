@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Log in — TCOM Bibliography{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card p-4">
+            <h4 class="mb-4 text-center">Log in</h4>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        <input type="{{ field.field.widget.input_type }}"
+                               name="{{ field.html_name }}"
+                               class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               {% if field.value %}value="{{ field.value }}"{% endif %}>
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-dark w-100">Log in</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

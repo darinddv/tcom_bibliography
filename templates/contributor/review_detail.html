@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block nav_review %}active{% endblock %}
+{% block title %}Review — {{ publication.title|truncatechars:50 }}{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="mb-4">
+    <a href="{% url 'contributor:review_queue' %}"
+       class="text-muted text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>Review Queue
+    </a>
+    <h2 class="mt-2 mb-1">Extraction Review</h2>
+    <p class="text-muted mb-0">{{ publication.title|truncatechars:100 }}</p>
+    <div class="mt-1">
+        <span class="badge bg-secondary">{{ extraction.get_status_display }}</span>
+        {% if review.decision != 'pending' %}
+            <span class="badge
+                {% if review.decision == 'approved' %}bg-success
+                {% elif review.decision == 'rejected' %}bg-danger
+                {% else %}bg-warning text-dark{% endif %} ms-1">
+                {{ review.get_decision_display }}
+            </span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Left column: extraction data -->
+    <div class="col-md-8">
+
+        <!-- Submitted by -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title text-muted text-uppercase small mb-3">Submitted By</h6>
+                <div class="d-flex justify-content-between">
+                    <span>
+                        <i class="bi bi-person me-1"></i>
+                        {{ review.submitted_by.get_full_name|default:review.submitted_by.username }}
+                    </span>
+                    <span class="text-muted small">
+                        {{ review.submitted_at|date:"M j, Y g:i a" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Study Profile -->
+        {% if study_profile %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-clipboard2 me-2"></i>Study Profile</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-muted" style="width:180px">Study Design</td>
+                        <td>{{ study_profile.study_design|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Overall Sample Size</td>
+                        <td>{{ study_profile.overall_sample_size|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Setting</td>
+                        <td>{{ study_profile.setting|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Country</td>
+                        <td>{{ study_profile.country|default:"—" }}</td>
+                    </tr>
+                    {% if study_profile.notes %}
+                    <tr>
+                        <td class="text-muted">Notes</td>
+                        <td>{{ study_profile.notes }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Assessment Tools -->
+        {% if tool_usages %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-tools me-2"></i>Assessment Tools</h6>
+            </div>
+            <div class="card-body">
+                {% for usage in tool_usages %}
+                <div class="{% if not forloop.last %}border-bottom pb-3 mb-3{% endif %}">
+                    <div class="fw-medium mb-1">
+                        {{ usage.tool.abbreviation|default:usage.tool.label }}
+                        <span class="text-muted small ms-2">{{ usage.get_used_as_display }}</span>
+                        {% if usage.sample_size %}
+                            <span class="text-muted small ms-2">n={{ usage.sample_size }}</span>
+                        {% endif %}
+                        {% if usage.age_range_min or usage.age_range_max %}
+                            <span class="text-muted small ms-2">
+                                Ages {{ usage.age_range_min|default:"?" }}–{{ usage.age_range_max|default:"?" }}
+                            </span>
+                        {% endif %}
+                        {% if usage.population_type %}
+                            <span class="text-muted small ms-2">{{ usage.population_type.label }}</span>
+                        {% endif %}
+                    </div>
+                    {% if usage.outcome_domains.all %}
+                    <div class="ms-3">
+                        {% for outcome in usage.outcome_domains.all %}
+                        <div class="small text-muted">
+                            <i class="bi bi-arrow-right me-1"></i>
+                            {{ outcome.domain.label }}
+                            {% if outcome.direction %}— {{ outcome.get_direction_display }}{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Right column: review decision -->
+    <div class="col-md-4">
+        {% if is_reviewer and review.decision == 'pending' %}
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-clipboard2-check me-2"></i>Your Decision</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">Quality Score
+                            <span class="text-muted small">(1–10, optional)</span>
+                        </label>
+                        <input type="number" name="quality_score"
+                               min="1" max="10"
+                               class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Notes
+                            <span class="text-muted small">(required for revision/rejection)</span>
+                        </label>
+                        <textarea name="reviewer_notes" rows="5"
+                                  class="form-control"
+                                  placeholder="Describe what needs improvement..."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" name="action" value="approve"
+                                class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>Approve
+                        </button>
+                        <button type="submit" name="action" value="needs_revision"
+                                class="btn btn-warning">
+                            <i class="bi bi-pencil me-2"></i>Needs Revision
+                        </button>
+                        <button type="submit" name="action" value="reject"
+                                class="btn btn-danger">
+                            <i class="bi bi-x-circle me-2"></i>Reject
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% elif review.decision != 'pending' %}
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">Review Decision</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <span class="text-muted small">Decision</span>
+                    <div class="fw-medium">{{ review.get_decision_display }}</div>
+                </div>
+                {% if review.quality_score %}
+                <div class="mb-2">
+                    <span class="text-muted small">Quality Score</span>
+                    <div class="fw-medium">{{ review.quality_score }} / 10</div>
+                </div>
+                {% endif %}
+                {% if review.reviewer_notes %}
+                <div class="mb-2">
+                    <span class="text-muted small">Notes</span>
+                    <div>{{ review.reviewer_notes }}</div>
+                </div>
+                {% endif %}
+                {% if review.reviewed_at %}
+                <div class="text-muted small mt-3">
+                    Reviewed {{ review.reviewed_at|date:"M j, Y g:i a" }}
+                    {% if review.reviewer %}
+                        by {{ review.reviewer.get_full_name|default:review.reviewer.username }}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% else %}
+        <div class="card">
+            <div class="card-body text-muted small">
+                <i class="bi bi-clock me-1"></i>Awaiting reviewer decision.
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

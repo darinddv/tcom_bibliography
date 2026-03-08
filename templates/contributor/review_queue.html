@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block nav_review %}active{% endblock %}
+{% block title %}Review Queue — TCOM Bibliography{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Review Queue</h2>
+
+{% if reviews %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Publication</th>
+                    <th>Submitted by</th>
+                    <th>Submitted</th>
+                    <th>Reviewer type</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for review in reviews %}
+                <tr>
+                    <td>
+                        <a href="{% url 'contributor:publication_detail' review.extraction.publication.pk %}"
+                           class="text-decoration-none fw-medium">
+                            {{ review.extraction.publication.title|truncatechars:70 }}
+                        </a>
+                    </td>
+                    <td>{{ review.submitted_by.get_full_name|default:review.submitted_by.username }}</td>
+                    <td class="text-muted small">{{ review.submitted_at|date:"M j, Y" }}</td>
+                    <td>
+                        {% if review.extraction.reviewer_type == 'llm' %}
+                            <span class="badge bg-info text-dark">
+                                <i class="bi bi-robot me-1"></i>LLM
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-person me-1"></i>Human
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if is_reviewer %}
+                            <a href="{% url 'contributor:review_detail' review.pk %}"
+                               class="btn btn-sm btn-primary">Review</a>
+                        {% else %}
+                            <a href="{% url 'contributor:review_detail' review.pk %}"
+                               class="btn btn-sm btn-outline-secondary">View</a>
+                        {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-clipboard2-check fs-1 d-block mb-3"></i>
+    <p>No extractions pending review.</p>
+</div>
+{% endif %}
+{% endblock %}

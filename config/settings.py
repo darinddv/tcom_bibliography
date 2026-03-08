@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     # Our apps
     'core',
+    'contributor',
     #'extraction' 
 ]
 
@@ -139,3 +140,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # for debug toolbar
 INTERNAL_IPS = ['127.0.0.1']
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'

@@ -3,6 +3,11 @@ from django.db import models
 from simple_history.models import HistoricalRecords
 
 
+class ActiveExtractionManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
 class ExtractionRecord(models.Model):
     """
     The anchor for all extraction data on a publication.
@@ -50,8 +55,17 @@ class ExtractionRecord(models.Model):
         choices=STATUS_CHOICES,
         default='draft',
     )
+    is_deleted = models.BooleanField(
+        default=False,
+        help_text='Soft delete. Hidden from normal views. Only removable by superusers.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Default manager filters out soft-deleted records
+    objects = ActiveExtractionManager()
+    # Use this when you explicitly need to include deleted records
+    all_objects = models.Manager()
 
     class Meta:
         ordering = ['-created_at']
@@ -65,4 +79,5 @@ class ExtractionRecord(models.Model):
             return f'{self.publication} — LLM ({self.llm_model})'
         reviewer_name = self.reviewer.username if self.reviewer else 'unknown'
         return f'{self.publication} — {reviewer_name}'
+
     history = HistoricalRecords()

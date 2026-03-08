@@ -1,13 +1,9 @@
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
 class ExtractionReview(models.Model):
-    """
-    A review event created when a contributor submits an extraction.
-    One active review per extraction at a time.
-    The reviewer records their decision here -- approved or rejected.
-    """
 
     DECISION_CHOICES = [
         ('pending', 'Pending'),
@@ -44,6 +40,12 @@ class ExtractionReview(models.Model):
         null=True,
         blank=True,
         help_text='Set when the reviewer records their decision.'
+    )
+    quality_score = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        help_text='Quality score from 1 (poor) to 10 (excellent).'
     )
     reviewer_notes = models.TextField(
         blank=True,

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TCOM Bibliography{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background-color: #fff;
+            border-right: 1px solid #dee2e6;
+        }
+        .sidebar .nav-link {
+            color: #495057;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+        }
+        .sidebar .nav-link:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .sidebar .nav-link.active {
+            background-color: #e9ecef;
+            color: #212529;
+            font-weight: 500;
+        }
+        .sidebar .nav-link i {
+            width: 20px;
+        }
+        .main-content {
+            padding: 2rem;
+        }
+        .card {
+            border: 1px solid #dee2e6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid px-3">
+        <a class="navbar-brand" href="{% url 'contributor:dashboard' %}">
+            <i class="bi bi-journal-bookmark-fill me-2"></i>TCOM Bibliography
+        </a>
+        <div class="ms-auto d-flex align-items-center gap-3">
+            {% if user.is_authenticated %}
+                <span class="text-secondary small">
+                    <i class="bi bi-person-circle me-1"></i>{{ user.get_full_name|default:user.username }}
+                </span>
+                <a href="{% url 'contributor:profile' %}" class="btn btn-sm btn-outline-secondary">Profile</a>
+                <a href="{% url 'contributor:logout' %}" class="btn btn-sm btn-outline-danger">Log out</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- Sidebar -->
+        {% if user.is_authenticated %}
+        <nav class="col-md-2 sidebar py-3">
+            <ul class="nav flex-column gap-1">
+                <li class="nav-item">
+                    <a class="nav-link {% block nav_dashboard %}{% endblock %}"
+                       href="{% url 'contributor:dashboard' %}">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% block nav_publications %}{% endblock %}"
+                       href="{% url 'contributor:publication_list' %}">
+                        <i class="bi bi-journals me-2"></i>Publications
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% block nav_review %}{% endblock %}"
+                       href="{% url 'contributor:review_queue' %}">
+                        <i class="bi bi-clipboard2-check me-2"></i>Review Queue
+                    </a>
+                </li>
+                {% if user.is_staff %}
+                <li class="nav-item mt-3">
+                    <a class="nav-link" href="/admin/">
+                        <i class="bi bi-gear me-2"></i>Admin
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        <!-- Main content -->
+        <main class="col-md-{% if user.is_authenticated %}10{% else %}12{% endif %} main-content">
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

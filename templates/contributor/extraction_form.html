@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block nav_dashboard %}active{% endblock %}
+{% block title %}Extract — {{ publication.title|truncatechars:50 }}{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="mb-4">
+    <a href="{% url 'contributor:dashboard' %}"
+       class="text-muted text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>Dashboard
+    </a>
+    <h2 class="mt-2 mb-1">Extraction Form</h2>
+    <p class="text-muted mb-0">{{ publication.title|truncatechars:100 }}</p>
+    <span class="badge bg-secondary mt-1">{{ extraction.get_status_display }}</span>
+</div>
+
+<form method="post" action="{% url 'contributor:extraction_form' publication.pk %}">
+{% csrf_token %}
+
+
+{% if latest_review and latest_review.decision in 'needs_revision,rejected' %}
+<div class="alert alert-warning mb-4">
+    <h6 class="alert-heading">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {% if latest_review.decision == 'needs_revision' %}
+            Revision Requested
+        {% else %}
+            Extraction Rejected
+        {% endif %}
+    </h6>
+    <p class="mb-1">
+        <span class="text-muted small">Reviewed by </span>
+        {{ latest_review.reviewer.get_full_name|default:latest_review.reviewer.username }}
+        <span class="text-muted small"> on {{ latest_review.reviewed_at|date:"M j, Y" }}</span>
+    </p>
+    {% if latest_review.quality_score %}
+    <p class="mb-1">
+        <span class="text-muted small">Quality Score: </span>
+        <strong>{{ latest_review.quality_score }} / 10</strong>
+    </p>
+    {% endif %}
+    {% if latest_review.reviewer_notes %}
+    <hr class="my-2">
+    <p class="mb-0">{{ latest_review.reviewer_notes }}</p>
+    {% endif %}
+</div>
+{% endif %}
+
+
+<!-- Study Profile -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-clipboard2 me-2"></i>Study Profile</h6>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Study Design</label>
+                {{ study_form.study_design }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Overall Sample Size</label>
+                {{ study_form.overall_sample_size }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Setting</label>
+                {{ study_form.setting }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Country</label>
+                {{ study_form.country }}
+            </div>
+            <div class="col-12">
+                <label class="form-label">Notes</label>
+                {{ study_form.notes }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save button -->
+<div class="mb-4">
+    <button type="submit" name="action" value="save" class="btn btn-outline-primary me-2">
+        <i class="bi bi-save me-1"></i>Save Progress
+    </button>
+</div>
+
+</form>
+
+<!-- Assessment Tools -->
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-tools me-2"></i>Assessment Tools</h6>
+    </div>
+    <div class="card-body">
+
+        <!-- Existing tool usages -->
+        {% for usage in tool_usages %}
+        <div class="border rounded p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <span class="fw-medium">{{ usage.tool.abbreviation|default:usage.tool.label }}</span>
+                    <span class="text-muted small ms-2">{{ usage.get_used_as_display }}</span>
+                    {% if usage.sample_size %}
+                        <span class="text-muted small ms-2">n={{ usage.sample_size }}</span>
+                    {% endif %}
+                    {% if usage.age_range_min or usage.age_range_max %}
+                        <span class="text-muted small ms-2">
+                            Ages {{ usage.age_range_min|default:"?" }}–{{ usage.age_range_max|default:"?" }}
+                        </span>
+                    {% endif %}
+                </div>
+                <form method="post"
+                      action="{% url 'contributor:delete_tool_usage' publication.pk usage.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Outcome domains for this tool -->
+            {% if usage.outcome_domains.all %}
+            <div class="ms-3 mb-2">
+                {% for outcome in usage.outcome_domains.all %}
+                <div class="d-flex justify-content-between align-items-center py-1
+                            {% if not forloop.last %}border-bottom{% endif %}">
+                    <span class="small">
+                        {{ outcome.domain.label }}
+                        {% if outcome.direction %}
+                            <span class="text-muted ms-1">— {{ outcome.get_direction_display }}</span>
+                        {% endif %}
+                    </span>
+                    <form method="post"
+                          action="{% url 'contributor:delete_outcome_domain' publication.pk outcome.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-link text-danger p-0">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Add outcome domain -->
+            <form method="post"
+                  action="{% url 'contributor:add_outcome_domain' publication.pk usage.pk %}">
+                {% csrf_token %}
+                <div class="row g-2 align-items-end mt-1">
+                    <div class="col-md-5">
+                        <label class="form-label small text-muted">Outcome Domain</label>
+                        {{ outcome_form.domain }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Direction</label>
+                        {{ outcome_form.direction }}
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
+                            <i class="bi bi-plus me-1"></i>Add Outcome
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% empty %}
+        <p class="text-muted small mb-3">No assessment tools added yet.</p>
+        {% endfor %}
+
+        <!-- Add new tool usage -->
+        <div class="border-top pt-3 mt-2">
+            <p class="small text-muted mb-2">Add an assessment tool:</p>
+            <form method="post"
+                  action="{% url 'contributor:add_tool_usage' publication.pk %}">
+                {% csrf_token %}
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Tool</label>
+                        {{ tool_form.tool }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Used As</label>
+                        {{ tool_form.used_as }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Sample Size</label>
+                        {{ tool_form.sample_size }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Age Min</label>
+                        {{ tool_form.age_range_min }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted">Age Max</label>
+                        {{ tool_form.age_range_max }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Population Type</label>
+                        {{ tool_form.population_type }}
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-plus me-1"></i>Add Tool
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Submit for review -->
+{% if extraction.status == 'draft' %}
+<div class="card border-primary">
+    <div class="card-body">
+        <h6 class="card-title">Ready to submit?</h6>
+        <p class="card-text text-muted small">
+            Submitting will send this extraction for reviewer approval.
+            Make sure you have saved your progress first.
+        </p>
+        <form method="post"
+              action="{% url 'contributor:extraction_form' publication.pk %}">
+            {% csrf_token %}
+            <button type="submit" name="action" value="submit"
+                    class="btn btn-primary">
+                <i class="bi bi-send me-2"></i>Submit for Review
+            </button>
+        </form>
+    </div>
+</div>
+{% elif extraction.status == 'submitted' %}
+<div class="alert alert-info">
+    <i class="bi bi-clock me-2"></i>
+    This extraction has been submitted and is awaiting review.
+</div>
+{% elif extraction.status == 'approved' %}
+<div class="alert alert-success">
+    <i class="bi bi-check-circle me-2"></i>
+    This extraction has been approved.
+</div>
+{% elif extraction.status == 'rejected' %}
+<div class="alert alert-danger">
+    <i class="bi bi-x-circle me-2"></i>
+    This extraction was rejected. Please review the feedback and resubmit.
+    <form method="post"
+          action="{% url 'contributor:extraction_form' publication.pk %}"
+          class="mt-2">
+        {% csrf_token %}
+        <button type="submit" name="action" value="reopen"
+                class="btn btn-sm btn-outline-danger">
+            Reopen for Editing
+        </button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}
