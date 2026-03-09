@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -63,6 +64,16 @@ class Publication(models.Model):
         default='manual',
     )
 
+    # --- Provenance ---
+    submitted_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='submitted_publications',
+        help_text='User who imported or submitted this publication.'
+    )
+
     # --- Curation ---
     inclusion_status = models.CharField(
         max_length=50,
@@ -88,3 +99,7 @@ class Publication(models.Model):
 
     def __str__(self):
         return f'{self.title[:80]} ({self.year})'
+
+    def is_locked(self):
+        """Returns True if a pending deletion request exists for this paper."""
+        return self.deletion_requests.filter(status='pending').exists()

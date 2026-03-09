@@ -13,6 +13,8 @@ from contributor.forms import StudyProfileForm, AssessmentToolUsageForm, Outcome
 from core.services.workflow import transition, get_current_state
 from core.services.extraction import approve_extraction, reject_extraction, needs_revision
 
+from core.models.deletion_request import DeletionRequest
+from core.services.deletion import request_deletion, cancel_deletion_request, resolve_deletion_request
 
 @login_required
 def dashboard(request):
@@ -382,3 +384,125 @@ def extraction_detail(request, pk, extraction_id):
         'tool_usages': tool_usages,
         'latest_review': latest_review,
     })
+
+
+@login_required
+def import_doi(request):
+    """Frontend DOI import for contributors and above."""
+    if request.method == 'POST':
+        from django.contrib import messages
+        from core.services.doi_import import import_from_doi
+
+        doi = request.POST.get('doi', '').strip()
+        if not doi:
+            messages.error(request, 'Please enter a DOI.')
+            return redirect('contributor:publication_list')
+
+        try:
+            pub, created = import_from_doi(doi, submitted_by=request.user)
+            if created:
+                messages.success(request, f'Successfully imported: {pub.title[:80]}')
+                return redirect('contributor:publication_detail', pk=pub.pk)
+            else:
+                messages.warning(request, f'This paper is already in the system.')
+                return redirect('contributor:publication_detail', pk=pub.pk)
+        except Exception as e:
+            messages.error(request, f'Import failed: {e}')
+
+    return redirect('contributor:publication_list')
+
+
+@login_required
+def request_deletion_view(request, pk):
+    publication = get_object_or_404(Publication, pk=pk)
+
+    if request.method == 'POST':
+        from django.contrib import messages
+        reason = request.POST.get('reason', '').strip()
+        try:
+            request_deletion(
+                publication=publication,
+                requested_by=request.user,
+                reason=reason,
+            )
+            messages.warning(request, 'Deletion request submitted. The paper is now locked.')
+        except ValueError as e:
+            messages.error(request, str(e))
+
+    return redirect('contributor:publication_detail', pk=pk)
+
+
+@login_required
+def cancel_deletion_view(request, pk):
+    publication = get_object_or_404(Publication, pk=pk)
+    deletion_request = get_object_or_404(
+        DeletionRequest,
+        publication=publication,
+        requested_by=request.user,
+        status='pending',
+    )
+
+    if request.method == 'POST':
+        from django.contrib import messages
+        try:
+            cancel_deletion_request(
+                deletion_request=deletion_request,
+                cancelled_by=request.user,
+            )
+            messages.success(request, 'Deletion request cancelled. The paper is now unlocked.')
+        except ValueError as e:
+            messages.error(request, str(e))
+
+    return redirect('contributor:publication_detail', pk=pk)
+
+
+@login_required
+def deletion_queue(request):
+    """Editor-facing queue of pending deletion requests."""
+    is_editor = (
+        request.user.is_staff or
+        request.user.groups.filter(name='Editor').exists()
+    )
+
+    pending_requests = DeletionRequest.objects.filter(
+        status='pending',
+    ).select_related('publication', 'requested_by')
+
+    return render(request, 'contributor/deletion_queue.html', {
+        'pending_requests': pending_requests,
+        'is_editor': is_editor,
+    })
+
+
+@login_required
+def resolve_deletion_view(request, deletion_request_id):
+    deletion_request = get_object_or_404(DeletionRequest, pk=deletion_request_id)
+
+    is_editor = (
+        request.user.is_staff or
+        request.user.groups.filter(name='Editor').exists()
+    )
+    if not is_editor:
+        from django.contrib import messages
+        messages.error(request, 'You do not have permission to resolve deletion requests.')
+        return redirect('contributor:deletion_queue')
+
+    if request.method == 'POST':
+        from django.contrib import messages
+        action = request.POST.get('action')
+        note = request.POST.get('resolution_note', '').strip()
+        try:
+            resolve_deletion_request(
+                deletion_request=deletion_request,
+                resolved_by=request.user,
+                approve=action == 'approve',
+                note=note,
+            )
+            if action == 'approve':
+                messages.success(request, 'Publication marked as excluded.')
+            else:
+                messages.success(request, 'Deletion request rejected. Paper is unlocked.')
+        except ValueError as e:
+            messages.error(request, str(e))
+
+    return redirect('contributor:deletion_queue')

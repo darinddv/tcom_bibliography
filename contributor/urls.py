@@ -19,4 +19,10 @@ urlpatterns = [
     path('review/<int:review_id>/', views.review_detail, name='review_detail'),
     path('publications/<int:pk>/unassign/', views.unassign_me, name='unassign_me'),
     path('publications/<int:pk>/extractions/<int:extraction_id>/', views.extraction_detail, name='extraction_detail'),
+    path('publications/import/', views.import_doi, name='import_doi'),
+    path('publications/<int:pk>/request-deletion/', views.request_deletion_view, name='request_deletion'),
+    path('publications/<int:pk>/cancel-deletion/', views.cancel_deletion_view, name='cancel_deletion'),
+    path('deletions/', views.deletion_queue, name='deletion_queue'),
+    path('deletions/<int:deletion_request_id>/resolve/', views.resolve_deletion_view, name='resolve_deletion'),
 ]
+

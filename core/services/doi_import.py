@@ -1,5 +1,6 @@
 import json
 import httpx
+from django.contrib.auth.models import User
 from core.models.publications import Publication
 from core.models.workflow import WorkflowTransition
 
@@ -7,11 +8,12 @@ from core.models.workflow import WorkflowTransition
 CROSSREF_URL = 'https://api.crossref.org/works/{doi}'
 
 
-def import_from_doi(doi: str) -> tuple[Publication, bool]:
+def import_from_doi(doi: str, submitted_by: User = None) -> tuple[Publication, bool]:
     """
     Given a DOI string, fetch metadata from Crossref and create a Publication.
     Returns a tuple of (publication, created) where created is True if a new
     record was made, False if one already existed with that DOI.
+    submitted_by is the user importing the paper, or None for system imports.
     """
     doi = doi.strip()
 
@@ -39,6 +41,7 @@ def import_from_doi(doi: str) -> tuple[Publication, bool]:
     issue = work.get('issue', '')
     pages = work.get('page', '')
     publication_type = _extract_type(work)
+    language = _extract_language(work)
 
     publication = Publication.objects.create(
         doi=doi,
@@ -49,9 +52,11 @@ def import_from_doi(doi: str) -> tuple[Publication, bool]:
         volume=volume,
         issue=issue,
         pages=pages,
+        language=language,
         publication_type=publication_type,
         metadata_source='crossref',
         raw_metadata=json.dumps(work),
+        submitted_by=submitted_by,
     )
 
     # Create initial workflow transition
@@ -59,9 +64,9 @@ def import_from_doi(doi: str) -> tuple[Publication, bool]:
         publication=publication,
         from_state='',
         to_state='unassigned',
-        actor=None,
-        is_system_action=True,
-        comment='Automatically created on DOI import.',
+        actor=submitted_by,
+        is_system_action=submitted_by is None,
+        comment='Imported via DOI.' if submitted_by else 'Automatically created on DOI import.',
     )
 
     return publication, True
@@ -86,6 +91,10 @@ def _extract_year(work: dict) -> int | None:
 def _extract_journal(work: dict) -> str:
     container = work.get('container-title', [])
     return container[0] if container else ''
+
+
+def _extract_language(work: dict) -> str:
+    return work.get('language', 'English')
 
 
 def _extract_type(work: dict) -> str:

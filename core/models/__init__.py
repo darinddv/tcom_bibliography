@@ -1,6 +1,7 @@
 from .users import UserProfile
 from .controlled_vocabulary import ControlledTerm
 from .publications import Publication
+from .deletion_request import DeletionRequest
 from .workflow import WorkflowTransition, PublicationAssignment
 from .extraction import ExtractionRecord
 from .study_profile import StudyProfile
@@ -11,6 +12,7 @@ __all__ = [
     'UserProfile',
     'ControlledTerm',
     'Publication',
+    'DeletionRequest',
     'WorkflowTransition',
     'PublicationAssignment',
     'ExtractionRecord',

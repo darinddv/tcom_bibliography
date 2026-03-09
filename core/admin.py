@@ -1,3 +1,4 @@
+from urllib import request
 from django.contrib import admin
 from django.contrib import messages
 from django.contrib.auth.models import User
@@ -15,6 +16,7 @@ from core.models.extraction import ExtractionRecord
 from core.models.study_profile import StudyProfile
 from core.models.assessment import AssessmentToolUsage, OutcomeDomain
 from core.models.extraction_review import ExtractionReview
+from core.models.deletion_request import DeletionRequest
 
 
 
@@ -67,6 +69,9 @@ class PublicationAdmin(admin.ModelAdmin):
             'fields': ['title', 'abstract', 'year', 'journal', 'volume', 'issue',
                        'pages', 'language', 'publication_type']
         }),
+        ('Provenance', {
+            'fields': ['submitted_by'],
+        }),
         ('Curation', {
             'fields': ['inclusion_status', 'exclusion_reason', 'curation_notes']
         }),
@@ -92,7 +97,7 @@ class PublicationAdmin(admin.ModelAdmin):
             doi = request.POST.get('doi', '').strip()
             if doi:
                 try:
-                    pub, created = import_from_doi(doi)
+                    pub, created = import_from_doi(doi, submitted_by=request.user)
                     if created:
                         self.message_user(
                             request,
@@ -164,11 +169,17 @@ class ExtractionRecordAdmin(admin.ModelAdmin):
     inlines = [StudyProfileInline, AssessmentToolUsageInline]
 
 
-
-
 @admin.register(ExtractionReview)
 class ExtractionReviewAdmin(admin.ModelAdmin):
     list_display = ['extraction', 'submitted_by', 'reviewer', 'decision', 'submitted_at', 'reviewed_at']
     list_filter = ['decision']
     search_fields = ['extraction__publication__title', 'submitted_by__username', 'reviewer__username']
     readonly_fields = ['submitted_at']
+    
+
+@admin.register(DeletionRequest)
+class DeletionRequestAdmin(admin.ModelAdmin):
+    list_display = ['publication', 'requested_by', 'status', 'requested_at', 'resolved_by', 'resolved_at']
+    list_filter = ['status']
+    search_fields = ['publication__title', 'requested_by__username']
+    readonly_fields = ['requested_at', 'resolved_at']

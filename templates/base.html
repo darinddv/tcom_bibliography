@@ -95,6 +95,14 @@
                         <i class="bi bi-clipboard2-check me-2"></i>Review Queue
                     </a>
                 </li>
+                {% if request.user.is_staff or request.user.groups.filter(name='Editor').exists %}
+                <li class="nav-item">
+                    <a class="nav-link {% block nav_deletions %}{% endblock %}"
+                       href="{% url 'contributor:deletion_queue' %}">
+                        <i class="bi bi-trash me-2"></i>Deletion Queue
+                    </a>
+                </li>
+                {% endif %}
                 {% if user.is_staff %}
                 <li class="nav-item mt-3">
                     <a class="nav-link" href="/admin/">

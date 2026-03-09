@@ -8,6 +8,29 @@
     <span class="text-muted small">{{ publications.count }} total</span>
 </div>
 
+<!-- DOI Import -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h6 class="card-title mb-3">
+            <i class="bi bi-cloud-download me-2"></i>Import Paper by DOI
+        </h6>
+        <form method="post" action="{% url 'contributor:import_doi' %}">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="text" name="doi"
+                       class="form-control"
+                       placeholder="e.g. 10.1016/j.childyouth.2010.09.018">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-download me-1"></i>Import
+                </button>
+            </div>
+            <div class="form-text text-muted">
+                Metadata will be fetched automatically from Crossref.
+            </div>
+        </form>
+    </div>
+</div>
+
 {% if publications %}
 <div class="card">
     <div class="table-responsive">
