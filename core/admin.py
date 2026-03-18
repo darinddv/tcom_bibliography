@@ -59,7 +59,7 @@ class PublicationAdmin(admin.ModelAdmin):
     list_display = ['title', 'year', 'journal', 'publication_type', 'inclusion_status', 'metadata_source']
     list_filter = ['inclusion_status', 'publication_type', 'metadata_source', 'year']
     search_fields = ['title', 'doi', 'abstract']
-    readonly_fields = ['raw_metadata', 'metadata_source', 'created_at', 'updated_at']
+    readonly_fields = ['raw_metadata', 'metadata_source', 'created_at', 'updated_at', 'pdf_uploaded_at']
     change_list_template = 'admin/publication_changelist.html'
     fieldsets = [
         ('Identifiers', {
@@ -81,6 +81,10 @@ class PublicationAdmin(admin.ModelAdmin):
         }),
         ('Timestamps', {
             'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse'],
+        }),
+        ('PDF', {
+            'fields': ['pdf_file', 'pdf_uploaded_by', 'pdf_uploaded_at'],
             'classes': ['collapse'],
         }),
     ]

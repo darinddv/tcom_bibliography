@@ -24,7 +24,32 @@ load_dotenv()  # loads .env in local development; harmless in production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = os.environ['SECRET_KEY'] # for postgres connection and Django secret key
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '') # for LLM integration
+ANTHROPIC_MODEL = 'claude-sonnet-4-20250514'
+
+# --- Cloudflare R2 ---
+CLOUDFLARE_R2_ACCESS_KEY_ID = os.environ.get('CLOUDFLARE_R2_ACCESS_KEY_ID', '')
+CLOUDFLARE_R2_SECRET_ACCESS_KEY = os.environ.get('CLOUDFLARE_R2_SECRET_ACCESS_KEY', '')
+CLOUDFLARE_R2_BUCKET_NAME = os.environ.get('CLOUDFLARE_R2_BUCKET_NAME', '')
+CLOUDFLARE_R2_ENDPOINT_URL = os.environ.get('CLOUDFLARE_R2_ENDPOINT_URL', '')
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+        'OPTIONS': {
+            'access_key': CLOUDFLARE_R2_ACCESS_KEY_ID,
+            'secret_key': CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+            'bucket_name': CLOUDFLARE_R2_BUCKET_NAME,
+            'endpoint_url': CLOUDFLARE_R2_ENDPOINT_URL,
+            'default_acl': None,
+            'file_overwrite': False,
+        },
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'

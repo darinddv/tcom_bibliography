@@ -267,7 +267,65 @@ def extraction_detail(request, pk, extraction_id):
         'latest_review': latest_review,
     })
 
+@login_required
+def upload_pdf(request, pk):
+    publication = get_object_or_404(Publication, pk=pk)
 
+    if not (request.user.is_staff or
+            request.user.groups.filter(name='Editor').exists() or
+            request.user.groups.filter(name='Contributor').exists()):
+        from django.contrib import messages
+        messages.error(request, 'You do not have permission to upload PDFs.')
+        return redirect('contributor:publication_detail', pk=pk)
+
+    if request.method == 'POST':
+        from django.contrib import messages
+        from django.utils import timezone
+
+        pdf_file = request.FILES.get('pdf_file')
+        if not pdf_file:
+            messages.error(request, 'No file selected.')
+            return redirect('contributor:publication_detail', pk=pk)
+
+        if not pdf_file.name.endswith('.pdf'):
+            messages.error(request, 'Only PDF files are accepted.')
+            return redirect('contributor:publication_detail', pk=pk)
+
+        # Delete old PDF if one exists
+        if publication.pdf_file:
+            publication.pdf_file.delete(save=False)
+
+        publication.pdf_file = pdf_file
+        publication.pdf_uploaded_by = request.user
+        publication.pdf_uploaded_at = timezone.now()
+        publication.save()
+
+        messages.success(request, 'PDF uploaded successfully.')
+
+    return redirect('contributor:publication_detail', pk=pk)
+
+
+@login_required
+def delete_pdf(request, pk):
+    publication = get_object_or_404(Publication, pk=pk)
+
+    if not (request.user.is_staff or
+            request.user.groups.filter(name='Editor').exists()):
+        from django.contrib import messages
+        messages.error(request, 'You do not have permission to delete PDFs.')
+        return redirect('contributor:publication_detail', pk=pk)
+
+    if request.method == 'POST':
+        from django.contrib import messages
+        if publication.pdf_file:
+            publication.pdf_file.delete(save=False)
+            publication.pdf_file = None
+            publication.pdf_uploaded_by = None
+            publication.pdf_uploaded_at = None
+            publication.save()
+            messages.success(request, 'PDF deleted.')
+
+    return redirect('contributor:publication_detail', pk=pk)
 # ---------------------------------------------------------------------------
 # Extraction form — full page
 # ---------------------------------------------------------------------------
@@ -588,6 +646,28 @@ def submit_extraction_view(request, pk):
 
     return redirect('contributor:dashboard')
 
+@login_required
+def run_llm_extraction_view(request, pk):
+    publication = get_object_or_404(Publication, pk=pk)
+
+    if not (request.user.is_staff or request.user.groups.filter(name='Editor').exists()):
+        from django.contrib import messages
+        messages.error(request, 'You do not have permission to run LLM extractions.')
+        return redirect('contributor:publication_detail', pk=pk)
+
+    if request.method == 'POST':
+        from django.contrib import messages
+        from core.services.llm_extraction import run_llm_extraction
+        try:
+            extraction = run_llm_extraction(publication)
+            messages.success(
+                request,
+                f'LLM extraction complete. It has been added to the review queue.'
+            )
+        except Exception as e:
+            messages.error(request, f'LLM extraction failed: {e}')
+
+    return redirect('contributor:publication_detail', pk=pk)
 
 # ---------------------------------------------------------------------------
 # Review

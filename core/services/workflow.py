@@ -7,7 +7,7 @@ from core.models.publications import Publication
 # Valid transitions map -- from_state: [allowed to_states]
 VALID_TRANSITIONS = {
     '':                 ['unassigned'],
-    'unassigned':       ['assigned', 'archived', 'flagged'],
+    'unassigned':       ['assigned', 'pending_review', 'archived', 'flagged'],
     'assigned':         ['in_progress', 'unassigned', 'archived', 'flagged'],
     'in_progress':      ['pending_review', 'archived', 'flagged'],
     'pending_review':   ['approved', 'rejected', 'in_progress', 'flagged'],

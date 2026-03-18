@@ -32,7 +32,7 @@ urlpatterns = [
     path('publications/<int:pk>/extract/predictors/add/', views.add_predictor, name='add_predictor'),
     path('publications/<int:pk>/extract/predictors/<int:predictor_id>/delete/', views.delete_predictor, name='delete_predictor'),
     path('publications/<int:pk>/extract/submit/', views.submit_extraction_view, name='submit_extraction'),
-
+    path('publications/<int:pk>/run-llm/', views.run_llm_extraction_view, name='run_llm_extraction'),
     # --- Review ---
     path('review/', views.review_queue, name='review_queue'),
     path('review/<int:review_id>/', views.review_detail, name='review_detail'),
@@ -44,4 +44,8 @@ urlpatterns = [
     # --- Account ---
     path('profile/', views.profile, name='profile'),
     path('logout/', views.logout_view, name='logout'),
+
+    path('publications/<int:pk>/run-llm/', views.run_llm_extraction_view, name='run_llm_extraction'),
+    path('publications/<int:pk>/upload-pdf/', views.upload_pdf, name='upload_pdf'),
+    path('publications/<int:pk>/delete-pdf/', views.delete_pdf, name='delete_pdf'),
 ]

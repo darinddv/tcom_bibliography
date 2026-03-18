@@ -85,7 +85,61 @@
                 </table>
             </div>
         </div>
-
+        <!-- PDF -->
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-file-pdf me-2"></i>Full Text PDF</h6>
+            </div>
+            <div class="card-body">
+                {% if publication.pdf_file %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{{ publication.pdf_file.url }}"
+                               target="_blank"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-download me-1"></i>Download PDF
+                            </a>
+                            <span class="text-muted small ms-3">
+                                Uploaded {{ publication.pdf_uploaded_at|date:"M j, Y" }}
+                                {% if publication.pdf_uploaded_by %}
+                                    by {{ publication.pdf_uploaded_by.get_full_name|default:publication.pdf_uploaded_by.username }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if is_editor %}
+                        <form method="post"
+                              action="{% url 'contributor:delete_pdf' publication.pk %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Delete this PDF?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-3">No PDF uploaded yet.</p>
+                    {% if is_contributor or is_editor %}
+                    <form method="post"
+                          action="{% url 'contributor:upload_pdf' publication.pk %}"
+                          enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="file"
+                                   name="pdf_file"
+                                   accept=".pdf"
+                                   class="form-control form-control-sm">
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-upload me-1"></i>Upload
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
         <!-- Existing extractions (read only) -->
         {% if extractions %}
         <div class="card">
@@ -188,7 +242,18 @@
                     <i class="bi bi-lock me-1"></i>This paper is locked pending a deletion request.
                 </div>
                 {% endif %}
-                
+                <!-- LLM extraction -->
+                {% if is_editor %}
+                <hr class="my-3">
+                <form method="post"
+                      action="{% url 'contributor:run_llm_extraction' publication.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary w-100"
+                            {% if publication.is_locked %}disabled{% endif %}>
+                        <i class="bi bi-robot me-2"></i>Run LLM Extraction
+                    </button>
+                </form>
+                {% endif %}                
                 <!-- Deletion request -->
                 {% if not publication.is_locked and user_extraction or active_assignment or any_assignment %}
                 <hr class="my-3">

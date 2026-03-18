@@ -74,6 +74,27 @@ class Publication(models.Model):
         help_text='User who imported or submitted this publication.'
     )
 
+    # --- PDF ---
+    pdf_file = models.FileField(
+        upload_to='pdfs/',
+        null=True,
+        blank=True,
+        help_text='Uploaded PDF of the full paper.'
+    )
+    pdf_uploaded_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='uploaded_pdfs',
+        help_text='User who uploaded the PDF.'
+    )
+    pdf_uploaded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the PDF was uploaded.'
+    )
+
     # --- Curation ---
     inclusion_status = models.CharField(
         max_length=50,
@@ -103,3 +124,7 @@ class Publication(models.Model):
     def is_locked(self):
         """Returns True if a pending deletion request exists for this paper."""
         return self.deletion_requests.filter(status='pending').exists()
+
+    def has_pdf(self):
+        """Returns True if a PDF has been uploaded for this paper."""
+        return bool(self.pdf_file)
