@@ -10,12 +10,22 @@ class ControlledTerm(models.Model):
     """
 
     CATEGORY_CHOICES = [
+        # Study characteristics
         ('study_design', 'Study Design'),
         ('setting', 'Setting'),
         ('population_type', 'Population Type'),
+        # Assessment tools
         ('assessment_tool', 'Assessment Tool'),
         ('tool_usage_type', 'Tool Usage Type'),
+        ('administration_context', 'Administration Context'),
+        # Outcomes
         ('outcome_domain', 'Outcome Domain'),
+        # Statistical
+        ('statistical_method', 'Statistical Method'),
+        # Predictors / covariates
+        ('predictor_category', 'Predictor / Covariate Category'),
+        # Review feedback
+        ('feedback_category', 'Feedback Category'),
     ]
 
     category = models.CharField(

@@ -15,19 +15,13 @@
     <span class="badge bg-secondary mt-1">{{ extraction.get_status_display }}</span>
 </div>
 
-<form method="post" action="{% url 'contributor:extraction_form' publication.pk %}">
-{% csrf_token %}
-
-
+<!-- Reviewer feedback -->
 {% if latest_review and latest_review.decision in 'needs_revision,rejected' %}
 <div class="alert alert-warning mb-4">
     <h6 class="alert-heading">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        {% if latest_review.decision == 'needs_revision' %}
-            Revision Requested
-        {% else %}
-            Extraction Rejected
-        {% endif %}
+        {% if latest_review.decision == 'needs_revision' %}Revision Requested
+        {% else %}Extraction Rejected{% endif %}
     </h6>
     <p class="mb-1">
         <span class="text-muted small">Reviewed by </span>
@@ -47,213 +41,232 @@
 </div>
 {% endif %}
 
-
-<!-- Study Profile -->
+<!-- ------------------------------------------------------------------ -->
+<!-- STUDY PROFILE                                                        -->
+<!-- ------------------------------------------------------------------ -->
 <div class="card mb-4">
     <div class="card-header bg-white">
         <h6 class="mb-0"><i class="bi bi-clipboard2 me-2"></i>Study Profile</h6>
     </div>
     <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">Study Design</label>
-                {{ study_form.study_design }}
+        <form hx-post="{% url 'contributor:save_study_profile' publication.pk %}"
+              hx-trigger="change delay:800ms"
+              hx-swap="none">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small">Study Design</label>
+                    {{ study_form.study_design }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Duration (years)</label>
+                    {{ study_form.study_duration_years }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Follow-up Duration</label>
+                    {{ study_form.follow_up_duration }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Overall Sample Size</label>
+                    {{ study_form.overall_sample_size }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Setting</label>
+                    {{ study_form.setting }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Country</label>
+                    {{ study_form.country }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">US State</label>
+                    {{ study_form.us_state }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Funding Source</label>
+                    {{ study_form.funding_source }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Conflicts of Interest</label>
+                    {{ study_form.conflicts_of_interest }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label small">Inclusion Criteria</label>
+                    {{ study_form.inclusion_criteria }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label small">Exclusion Criteria</label>
+                    {{ study_form.exclusion_criteria }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label small">Notes</label>
+                    {{ study_form.notes }}
+                </div>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Overall Sample Size</label>
-                {{ study_form.overall_sample_size }}
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Setting</label>
-                {{ study_form.setting }}
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Country</label>
-                {{ study_form.country }}
-            </div>
-            <div class="col-12">
-                <label class="form-label">Notes</label>
-                {{ study_form.notes }}
-            </div>
-        </div>
+        </form>
     </div>
 </div>
 
-<!-- Save button -->
-<div class="mb-4">
-    <button type="submit" name="action" value="save" class="btn btn-outline-primary me-2">
-        <i class="bi bi-save me-1"></i>Save Progress
-    </button>
+<!-- ------------------------------------------------------------------ -->
+<!-- DEMOGRAPHICS                                                         -->
+<!-- ------------------------------------------------------------------ -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-people me-2"></i>Participant Demographics</h6>
+    </div>
+    <div class="card-body">
+        <form hx-post="{% url 'contributor:save_demographics' publication.pk %}"
+              hx-trigger="change delay:800ms"
+              hx-swap="none">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small">% Female</label>
+                    {{ demographics_form.percent_female }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">% Male</label>
+                    {{ demographics_form.percent_male }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Age Min</label>
+                    {{ demographics_form.age_range_min }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Age Max</label>
+                    {{ demographics_form.age_range_max }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">Age Notes</label>
+                    {{ demographics_form.age_notes }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">Race / Ethnicity Distribution</label>
+                    {{ demographics_form.race_distribution }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label small">Notes</label>
+                    {{ demographics_form.notes }}
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
-</form>
-
-<!-- Assessment Tools -->
+<!-- ------------------------------------------------------------------ -->
+<!-- RISK OF BIAS                                                         -->
+<!-- ------------------------------------------------------------------ -->
 <div class="card mb-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-shield-check me-2"></i>Risk of Bias</h6>
+    </div>
+    <div class="card-body">
+        <form hx-post="{% url 'contributor:save_risk_of_bias' publication.pk %}"
+              hx-trigger="change delay:800ms"
+              hx-swap="none">
+            {% csrf_token %}
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label small">Framework</label>
+                    {{ rob_form.framework }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Overall Rating</label>
+                    {{ rob_form.overall_rating }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small">Notes</label>
+                    {{ rob_form.notes }}
+                </div>
+            </div>
+        </form>
+
+        <h6 class="small text-muted mt-3 mb-2">Domain Ratings</h6>
+        {% include 'contributor/partials/rob_section.html' %}
+    </div>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- ASSESSMENT TOOLS                                                     -->
+<!-- ------------------------------------------------------------------ -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
         <h6 class="mb-0"><i class="bi bi-tools me-2"></i>Assessment Tools</h6>
     </div>
     <div class="card-body">
-
-        <!-- Existing tool usages -->
-        {% for usage in tool_usages %}
-        <div class="border rounded p-3 mb-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                    <span class="fw-medium">{{ usage.tool.abbreviation|default:usage.tool.label }}</span>
-                    <span class="text-muted small ms-2">{{ usage.get_used_as_display }}</span>
-                    {% if usage.sample_size %}
-                        <span class="text-muted small ms-2">n={{ usage.sample_size }}</span>
-                    {% endif %}
-                    {% if usage.age_range_min or usage.age_range_max %}
-                        <span class="text-muted small ms-2">
-                            Ages {{ usage.age_range_min|default:"?" }}–{{ usage.age_range_max|default:"?" }}
-                        </span>
-                    {% endif %}
-                </div>
-                <form method="post"
-                      action="{% url 'contributor:delete_tool_usage' publication.pk usage.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </form>
-            </div>
-
-            <!-- Outcome domains for this tool -->
-            {% if usage.outcome_domains.all %}
-            <div class="ms-3 mb-2">
-                {% for outcome in usage.outcome_domains.all %}
-                <div class="d-flex justify-content-between align-items-center py-1
-                            {% if not forloop.last %}border-bottom{% endif %}">
-                    <span class="small">
-                        {{ outcome.domain.label }}
-                        {% if outcome.direction %}
-                            <span class="text-muted ms-1">— {{ outcome.get_direction_display }}</span>
-                        {% endif %}
-                    </span>
-                    <form method="post"
-                          action="{% url 'contributor:delete_outcome_domain' publication.pk outcome.pk %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-link text-danger p-0">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </form>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Add outcome domain -->
-            <form method="post"
-                  action="{% url 'contributor:add_outcome_domain' publication.pk usage.pk %}">
-                {% csrf_token %}
-                <div class="row g-2 align-items-end mt-1">
-                    <div class="col-md-5">
-                        <label class="form-label small text-muted">Outcome Domain</label>
-                        {{ outcome_form.domain }}
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label small text-muted">Direction</label>
-                        {{ outcome_form.direction }}
-                    </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
-                            <i class="bi bi-plus me-1"></i>Add Outcome
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-        {% empty %}
-        <p class="text-muted small mb-3">No assessment tools added yet.</p>
-        {% endfor %}
-
-        <!-- Add new tool usage -->
-        <div class="border-top pt-3 mt-2">
-            <p class="small text-muted mb-2">Add an assessment tool:</p>
-            <form method="post"
-                  action="{% url 'contributor:add_tool_usage' publication.pk %}">
-                {% csrf_token %}
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-4">
-                        <label class="form-label small text-muted">Tool</label>
-                        {{ tool_form.tool }}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted">Used As</label>
-                        {{ tool_form.used_as }}
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted">Sample Size</label>
-                        {{ tool_form.sample_size }}
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted">Age Min</label>
-                        {{ tool_form.age_range_min }}
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small text-muted">Age Max</label>
-                        {{ tool_form.age_range_max }}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted">Population Type</label>
-                        {{ tool_form.population_type }}
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-plus me-1"></i>Add Tool
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
+        {% include 'contributor/partials/tools_section.html' %}
     </div>
 </div>
 
-<!-- Submit for review -->
-{% if extraction.status == 'draft' %}
-<div class="card border-primary">
+<!-- ------------------------------------------------------------------ -->
+<!-- STATISTICAL METHODS                                                  -->
+<!-- ------------------------------------------------------------------ -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Statistical Methods</h6>
+    </div>
+    <div class="card-body">
+        {% include 'contributor/partials/statistical_section.html' %}
+    </div>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- PREDICTORS / COVARIATES                                              -->
+<!-- ------------------------------------------------------------------ -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Predictors / Covariates</h6>
+    </div>
+    <div class="card-body">
+        {% include 'contributor/partials/predictors_section.html' %}
+    </div>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- SUBMIT                                                               -->
+<!-- ------------------------------------------------------------------ -->
+{% if extraction.status == 'draft' or extraction.status == 'rejected' or extraction.status == 'needs_revision' %}
+<div class="card border-primary mb-4">
     <div class="card-body">
         <h6 class="card-title">Ready to submit?</h6>
         <p class="card-text text-muted small">
-            Submitting will send this extraction for reviewer approval.
-            Make sure you have saved your progress first.
+            Study profile and demographics save automatically as you type.
+            Make sure all sections are complete before submitting.
         </p>
-        <form method="post"
-              action="{% url 'contributor:extraction_form' publication.pk %}">
+        <form method="post" action="{% url 'contributor:submit_extraction' publication.pk %}">
             {% csrf_token %}
-            <button type="submit" name="action" value="submit"
-                    class="btn btn-primary">
+            <button type="submit" class="btn btn-primary">
                 <i class="bi bi-send me-2"></i>Submit for Review
             </button>
         </form>
     </div>
 </div>
 {% elif extraction.status == 'submitted' %}
-<div class="alert alert-info">
+<div class="alert alert-info mb-4">
     <i class="bi bi-clock me-2"></i>
     This extraction has been submitted and is awaiting review.
 </div>
 {% elif extraction.status == 'approved' %}
-<div class="alert alert-success">
+<div class="alert alert-success mb-4">
     <i class="bi bi-check-circle me-2"></i>
-    This extraction has been approved.
-</div>
-{% elif extraction.status == 'rejected' %}
-<div class="alert alert-danger">
-    <i class="bi bi-x-circle me-2"></i>
-    This extraction was rejected. Please review the feedback and resubmit.
-    <form method="post"
-          action="{% url 'contributor:extraction_form' publication.pk %}"
-          class="mt-2">
-        {% csrf_token %}
-        <button type="submit" name="action" value="reopen"
-                class="btn btn-sm btn-outline-danger">
-            Reopen for Editing
-        </button>
-    </form>
+    This extraction has been approved. You can still edit and save any fields above.
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Re-initialise Tom Select on any new selects injected by HTMX
+    document.addEventListener('htmx:afterSwap', function(evt) {
+        evt.detail.target.querySelectorAll('select.ts-select').forEach(function(el) {
+            if (!el.tomselect) {
+                new TomSelect(el, {
+                    allowEmptyOption: true,
+                    placeholder: el.dataset.placeholder || 'Select...',
+                });
+            }
+        });
+    });
+</script>
 {% endblock %}

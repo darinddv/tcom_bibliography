@@ -1,0 +1,150 @@
+<div id="tools-section">
+
+    {% for usage in tool_usages %}
+    <div class="border rounded p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <span class="fw-medium">
+                    {{ usage.tool.abbreviation|default:usage.tool.label }}
+                </span>
+                <span class="badge bg-secondary ms-2">{{ usage.get_used_as_display }}</span>
+                {% if usage.sample_size %}
+                    <span class="text-muted small ms-2">n={{ usage.sample_size }}</span>
+                {% endif %}
+                {% if usage.age_range_min or usage.age_range_max %}
+                    <span class="text-muted small ms-2">
+                        Ages {{ usage.age_range_min|default:"?" }}–{{ usage.age_range_max|default:"?" }}
+                    </span>
+                {% endif %}
+            </div>
+            <button class="btn btn-sm btn-outline-danger"
+                    hx-post="{% url 'contributor:delete_tool_usage' publication.pk usage.pk %}"
+                    hx-target="#tools-section"
+                    hx-swap="outerHTML"
+                    hx-confirm="Remove this tool and all its outcomes?">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+
+        <!-- Existing outcomes -->
+        {% if usage.outcome_domains.all %}
+        <div class="ms-2 mb-3">
+            <p class="small text-muted mb-1">Outcomes:</p>
+            {% for outcome in usage.outcome_domains.all %}
+            <div class="d-flex justify-content-between align-items-center py-1
+                        {% if not forloop.last %}border-bottom{% endif %}">
+                <span class="small">
+                    {{ outcome.domain.label }}
+                    {% if outcome.direction %}
+                        <span class="text-muted">— {{ outcome.get_direction_display }}</span>
+                    {% endif %}
+                    {% if outcome.effect_size_value %}
+                        <span class="text-muted ms-1">
+                            ({{ outcome.get_effect_size_type_display }}={{ outcome.effect_size_value }})
+                        </span>
+                    {% endif %}
+                </span>
+                <button class="btn btn-sm btn-link text-danger p-0 ms-2"
+                        hx-post="{% url 'contributor:delete_outcome_domain' publication.pk usage.pk outcome.pk %}"
+                        hx-target="#tools-section"
+                        hx-swap="outerHTML">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Add outcome form -->
+        <div class="border-top pt-2 mt-2">
+            <p class="small text-muted mb-2">Add outcome:</p>
+            <form hx-post="{% url 'contributor:add_outcome_domain' publication.pk usage.pk %}"
+                  hx-target="#tools-section"
+                  hx-swap="outerHTML">
+                {% csrf_token %}
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small">Domain</label>
+                        {{ outcome_form.domain }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Direction</label>
+                        {{ outcome_form.direction }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Effect Size Type</label>
+                        {{ outcome_form.effect_size_type }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Effect Size Value</label>
+                        {{ outcome_form.effect_size_value }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">p-value</label>
+                        {{ outcome_form.p_value }}
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label small">Outcome Metric</label>
+                        {{ outcome_form.outcome_metric }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Result Description</label>
+                        {{ outcome_form.result_description }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Significance</label>
+                        {{ outcome_form.significance }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted small mb-3">No assessment tools added yet.</p>
+    {% endfor %}
+
+    <!-- Add tool form -->
+    <div class="border-top pt-3 mt-2">
+        <p class="small text-muted mb-2">Add assessment tool:</p>
+        <form hx-post="{% url 'contributor:add_tool_usage' publication.pk %}"
+              hx-target="#tools-section"
+              hx-swap="outerHTML">
+            {% csrf_token %}
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small">Tool</label>
+                    {{ tool_form.tool }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Used As</label>
+                    {{ tool_form.used_as }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Administration</label>
+                    {{ tool_form.administration_timing }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Sample Size</label>
+                    {{ tool_form.sample_size }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Population Type</label>
+                    {{ tool_form.population_type }}
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>

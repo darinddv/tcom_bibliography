@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}TCOM Bibliography{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <style>
         body {
             background-color: #f8f9fa;
@@ -46,6 +48,13 @@
         .status-badge {
             font-size: 0.75rem;
             padding: 0.25rem 0.6rem;
+        }
+        /* Tom Select tweaks */
+        .ts-wrapper {
+            width: 100%;
+        }
+        .ts-wrapper.single .ts-control {
+            background-color: #fff;
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -95,7 +104,7 @@
                         <i class="bi bi-clipboard2-check me-2"></i>Review Queue
                     </a>
                 </li>
-                {% if request.user.is_staff or request.user.groups.filter(name='Editor').exists %}
+                {% if is_editor %}
                 <li class="nav-item">
                     <a class="nav-link {% block nav_deletions %}{% endblock %}"
                        href="{% url 'contributor:deletion_queue' %}">
@@ -134,6 +143,28 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configure HTMX to send CSRF token with every request
+        document.body.addEventListener('htmx:configRequest', function(evt) {
+            evt.detail.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]').content;
+        });
+    });
+</script>
+
+<script>
+    // Apply Tom Select to all select elements with the ts-select class
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('select.ts-select').forEach(function(el) {
+            new TomSelect(el, {
+                allowEmptyOption: true,
+                placeholder: el.dataset.placeholder || 'Select...',
+            });
+        });
+    });
+</script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

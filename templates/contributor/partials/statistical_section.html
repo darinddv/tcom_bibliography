@@ -1,0 +1,55 @@
+<div id="statistical-section">
+    {% if statistical_methods %}
+    <div class="mb-3">
+        {% for method in statistical_methods %}
+        <div class="d-flex justify-content-between align-items-center py-2
+                    {% if not forloop.last %}border-bottom{% endif %}">
+            <div>
+                <span class="fw-medium small">
+                    {% if method.method_name %}
+                        {{ method.method_name.abbreviation|default:method.method_name.label }}
+                    {% else %}
+                        {{ method.get_method_category_display }}
+                    {% endif %}
+                </span>
+                <span class="text-muted small ms-2">{{ method.get_method_category_display }}</span>
+                {% if method.notes %}
+                    <span class="text-muted small ms-2">— {{ method.notes }}</span>
+                {% endif %}
+            </div>
+            <button class="btn btn-sm btn-link text-danger p-0"
+                    hx-post="{% url 'contributor:delete_statistical_method' publication.pk method.pk %}"
+                    hx-target="#statistical-section"
+                    hx-swap="outerHTML">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form hx-post="{% url 'contributor:add_statistical_method' publication.pk %}"
+          hx-target="#statistical-section"
+          hx-swap="outerHTML">
+        {% csrf_token %}
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small">Category</label>
+                {{ statistical_form.method_category }}
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small">Method</label>
+                {{ statistical_form.method_name }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Notes</label>
+                {{ statistical_form.notes }}
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-plus"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

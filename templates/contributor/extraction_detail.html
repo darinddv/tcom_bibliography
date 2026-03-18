@@ -42,8 +42,16 @@
             <div class="card-body">
                 <table class="table table-sm mb-0">
                     <tr>
-                        <td class="text-muted" style="width:180px">Study Design</td>
+                        <td class="text-muted" style="width:200px">Study Design</td>
                         <td>{{ study_profile.study_design|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Duration (years)</td>
+                        <td>{{ study_profile.study_duration_years|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Follow-up Duration</td>
+                        <td>{{ study_profile.follow_up_duration|default:"—" }}</td>
                     </tr>
                     <tr>
                         <td class="text-muted">Overall Sample Size</td>
@@ -55,8 +63,33 @@
                     </tr>
                     <tr>
                         <td class="text-muted">Country</td>
-                        <td>{{ study_profile.country|default:"—" }}</td>
+                        <td>
+                            {{ study_profile.country|default:"—" }}
+                            {% if study_profile.us_state %}
+                                — {{ study_profile.get_us_state_display }}
+                            {% endif %}
+                        </td>
                     </tr>
+                    <tr>
+                        <td class="text-muted">Funding Source</td>
+                        <td>{{ study_profile.get_funding_source_display|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Conflicts of Interest</td>
+                        <td>{{ study_profile.get_conflicts_of_interest_display|default:"—" }}</td>
+                    </tr>
+                    {% if study_profile.inclusion_criteria %}
+                    <tr>
+                        <td class="text-muted">Inclusion Criteria</td>
+                        <td>{{ study_profile.inclusion_criteria }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if study_profile.exclusion_criteria %}
+                    <tr>
+                        <td class="text-muted">Exclusion Criteria</td>
+                        <td>{{ study_profile.exclusion_criteria }}</td>
+                    </tr>
+                    {% endif %}
                     {% if study_profile.notes %}
                     <tr>
                         <td class="text-muted">Notes</td>
@@ -64,6 +97,88 @@
                     </tr>
                     {% endif %}
                 </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Demographics -->
+        {% if demographics %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-people me-2"></i>Participant Demographics</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-muted" style="width:200px">% Female / Male</td>
+                        <td>
+                            {% if demographics.percent_female or demographics.percent_male %}
+                                {{ demographics.percent_female|default:"?" }}% /
+                                {{ demographics.percent_male|default:"?" }}%
+                            {% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Age Range</td>
+                        <td>
+                            {% if demographics.age_range_min or demographics.age_range_max %}
+                                {{ demographics.age_range_min|default:"?" }}–{{ demographics.age_range_max|default:"?" }}
+                                {% if demographics.age_notes %}
+                                    <span class="text-muted small ms-1">({{ demographics.age_notes }})</span>
+                                {% endif %}
+                            {% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    {% if demographics.race_distribution %}
+                    <tr>
+                        <td class="text-muted">Race / Ethnicity</td>
+                        <td>{{ demographics.race_distribution }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if demographics.notes %}
+                    <tr>
+                        <td class="text-muted">Notes</td>
+                        <td>{{ demographics.notes }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Risk of Bias -->
+        {% if rob and rob.framework %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-shield-check me-2"></i>Risk of Bias</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-muted" style="width:200px">Framework</td>
+                        <td>{{ rob.get_framework_display }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Overall Rating</td>
+                        <td>{{ rob.get_overall_rating_display|default:"—" }}</td>
+                    </tr>
+                    {% if rob.notes %}
+                    <tr>
+                        <td class="text-muted">Notes</td>
+                        <td>{{ rob.notes }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+                {% if rob_domains %}
+                <h6 class="small text-muted mt-3 mb-2">Domain Ratings</h6>
+                {% for domain in rob_domains %}
+                <div class="d-flex justify-content-between py-1
+                            {% if not forloop.last %}border-bottom{% endif %}">
+                    <span class="small">{{ domain.domain_name }}</span>
+                    <span class="badge bg-secondary small">{{ domain.get_rating_display }}</span>
+                </div>
+                {% endfor %}
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -91,18 +206,85 @@
                         {% if usage.population_type %}
                             <span class="text-muted small ms-2">{{ usage.population_type.label }}</span>
                         {% endif %}
+                        {% if usage.administration_timing %}
+                            <span class="text-muted small ms-2">{{ usage.get_administration_timing_display }}</span>
+                        {% endif %}
+                        {% if usage.scoring_method %}
+                            <span class="text-muted small ms-2">{{ usage.get_scoring_method_display }}</span>
+                        {% endif %}
                     </div>
+                    {% if usage.sample_descriptor %}
+                    <p class="small text-muted mb-1">{{ usage.sample_descriptor }}</p>
+                    {% endif %}
                     {% if usage.outcome_domains.all %}
-                    <div class="ms-3">
+                    <div class="ms-3 mt-2">
                         {% for outcome in usage.outcome_domains.all %}
-                        <div class="small text-muted">
-                            <i class="bi bi-arrow-right me-1"></i>
-                            {{ outcome.domain.label }}
-                            {% if outcome.direction %}— {{ outcome.get_direction_display }}{% endif %}
+                        <div class="small py-1 {% if not forloop.last %}border-bottom{% endif %}">
+                            <span class="fw-medium">{{ outcome.domain.label }}</span>
+                            {% if outcome.direction %}
+                                <span class="text-muted ms-1">— {{ outcome.get_direction_display }}</span>
+                            {% endif %}
+                            {% if outcome.effect_size_type and outcome.effect_size_value %}
+                                <span class="text-muted ms-2">
+                                    {{ outcome.get_effect_size_type_display }}={{ outcome.effect_size_value }}
+                                </span>
+                            {% endif %}
+                            {% if outcome.p_value %}
+                                <span class="text-muted ms-2">p={{ outcome.p_value }}</span>
+                            {% endif %}
+                            {% if outcome.significance %}
+                                <span class="text-muted ms-2">({{ outcome.get_significance_display }})</span>
+                            {% endif %}
+                            {% if outcome.result_description %}
+                                <div class="text-muted mt-1">{{ outcome.result_description }}</div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
                     {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Statistical Methods -->
+        {% if statistical_methods %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Statistical Methods</h6>
+            </div>
+            <div class="card-body">
+                {% for method in statistical_methods %}
+                <div class="d-flex justify-content-between py-1
+                            {% if not forloop.last %}border-bottom{% endif %}">
+                    <span class="small">
+                        {% if method.method_name %}
+                            {{ method.method_name.abbreviation|default:method.method_name.label }}
+                        {% else %}
+                            {{ method.get_method_category_display }}
+                        {% endif %}
+                    </span>
+                    <span class="text-muted small">{{ method.get_method_category_display }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Predictors / Covariates -->
+        {% if predictors %}
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Predictors / Covariates</h6>
+            </div>
+            <div class="card-body">
+                {% for predictor in predictors %}
+                <div class="py-1 {% if not forloop.last %}border-bottom{% endif %}">
+                    {% if predictor.category %}
+                        <span class="badge bg-secondary me-2">{{ predictor.category.label }}</span>
+                    {% endif %}
+                    <span class="small">{{ predictor.description }}</span>
                 </div>
                 {% endfor %}
             </div>
@@ -116,7 +298,9 @@
         {% if latest_review %}
         <div class="card">
             <div class="card-header bg-white">
-                <h6 class="mb-0"><i class="bi bi-clipboard2-check me-2"></i>Latest Review</h6>
+                <h6 class="mb-0">
+                    <i class="bi bi-clipboard2-check me-2"></i>Latest Review
+                </h6>
             </div>
             <div class="card-body">
                 <div class="mb-2">
