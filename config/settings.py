@@ -41,6 +41,7 @@ STORAGES = {
             'endpoint_url': CLOUDFLARE_R2_ENDPOINT_URL,
             'default_acl': None,
             'file_overwrite': False,
+            'signature_version': 's3v4',
         },
     },
     'staticfiles': {
