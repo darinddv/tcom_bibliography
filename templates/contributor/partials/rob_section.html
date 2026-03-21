@@ -1,20 +1,5 @@
 <div id="rob-section">
-    <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <label class="form-label small">Framework</label>
-            {{ rob_form.framework }}
-        </div>
-        <div class="col-md-4">
-            <label class="form-label small">Overall Rating</label>
-            {{ rob_form.overall_rating }}
-        </div>
-        <div class="col-md-4">
-            <label class="form-label small">Notes</label>
-            {{ rob_form.notes }}
-        </div>
-    </div>
 
-    <!-- Existing domains -->
     {% if rob_domains %}
     <div class="mb-3">
         {% for domain in rob_domains %}
@@ -30,7 +15,8 @@
             <button class="btn btn-sm btn-link text-danger p-0"
                     hx-post="{% url 'contributor:delete_rob_domain' publication.pk domain.pk %}"
                     hx-target="#rob-section"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-vals='{"extraction_id": "{{ extraction_id }}"}'>
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -38,11 +24,11 @@
     </div>
     {% endif %}
 
-    <!-- Add domain form -->
     <form hx-post="{% url 'contributor:add_rob_domain' publication.pk %}"
           hx-target="#rob-section"
           hx-swap="outerHTML">
         {% csrf_token %}
+        <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
         <div class="row g-2 align-items-end">
             <div class="col-md-5">
                 <label class="form-label small">Domain Name</label>
@@ -63,4 +49,5 @@
             </div>
         </div>
     </form>
+
 </div>

@@ -13,7 +13,8 @@
             <button class="btn btn-sm btn-link text-danger p-0"
                     hx-post="{% url 'contributor:delete_predictor' publication.pk predictor.pk %}"
                     hx-target="#predictors-section"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-vals='{"extraction_id": "{{ extraction_id }}"}'>
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -25,6 +26,7 @@
           hx-target="#predictors-section"
           hx-swap="outerHTML">
         {% csrf_token %}
+        <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
                 <label class="form-label small">Category</label>

@@ -10,7 +10,14 @@
        class="text-muted text-decoration-none small">
         <i class="bi bi-arrow-left me-1"></i>Dashboard
     </a>
-    <h2 class="mt-2 mb-1">Extraction Form</h2>
+    <h2 class="mt-2 mb-1">
+        Extraction Form
+        {% if extraction.reviewer_type == 'llm' %}
+            <span class="badge bg-info text-dark ms-2 fs-6">
+                <i class="bi bi-robot me-1"></i>LLM Extraction
+            </span>
+        {% endif %}
+    </h2>
     <p class="text-muted mb-0">{{ publication.title|truncatechars:100 }}</p>
     <span class="badge bg-secondary mt-1">{{ extraction.get_status_display }}</span>
 </div>
@@ -53,6 +60,7 @@
               hx-trigger="change delay:800ms"
               hx-swap="none">
             {% csrf_token %}
+            <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label small">Study Design</label>
@@ -119,6 +127,7 @@
               hx-trigger="change delay:800ms"
               hx-swap="none">
             {% csrf_token %}
+            <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label small">% Female</label>
@@ -165,6 +174,7 @@
               hx-trigger="change delay:800ms"
               hx-swap="none">
             {% csrf_token %}
+            <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
             <div class="row g-3 mb-3">
                 <div class="col-md-4">
                     <label class="form-label small">Framework</label>
@@ -225,7 +235,7 @@
 <!-- ------------------------------------------------------------------ -->
 <!-- SUBMIT                                                               -->
 <!-- ------------------------------------------------------------------ -->
-{% if extraction.status == 'draft' or extraction.status == 'rejected' or extraction.status == 'needs_revision' %}
+{% if extraction.status == 'draft' or extraction.status == 'rejected' or extraction.status == 'needs_revision' or extraction.status == 'submitted' and extraction.reviewer_type == 'llm' %}
 <div class="card border-primary mb-4">
     <div class="card-body">
         <h6 class="card-title">Ready to submit?</h6>
@@ -235,6 +245,7 @@
         </p>
         <form method="post" action="{% url 'contributor:submit_extraction' publication.pk %}">
             {% csrf_token %}
+            <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-send me-2"></i>Submit for Review
             </button>
@@ -257,7 +268,6 @@
 
 {% block extra_js %}
 <script>
-    // Re-initialise Tom Select on any new selects injected by HTMX
     document.addEventListener('htmx:afterSwap', function(evt) {
         evt.detail.target.querySelectorAll('select.ts-select').forEach(function(el) {
             if (!el.tomselect) {

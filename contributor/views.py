@@ -34,9 +34,24 @@ from core.services.deletion import request_deletion, cancel_deletion_request, re
 
 def _get_extraction_or_redirect(request, publication):
     """
-    Returns the user's ExtractionRecord for a publication, or None if they
-    don't have one. Also checks assignment.
+    Returns the ExtractionRecord for this request.
+    For LLM extractions, reads extraction_id from POST/GET data.
+    For human extractions, uses assignment check.
     """
+    extraction_id = request.POST.get('extraction_id') or request.GET.get('extraction_id')
+
+    if extraction_id:
+        if not (request.user.is_staff or
+                request.user.groups.filter(name='Editor').exists() or
+                request.user.groups.filter(name='Reviewer').exists()):
+            return None, redirect('contributor:publication_detail', pk=publication.pk)
+        extraction = get_object_or_404(
+            ExtractionRecord,
+            pk=extraction_id,
+            publication=publication,
+        )
+        return extraction, None
+
     has_assignment = PublicationAssignment.objects.filter(
         publication=publication,
         assigned_to=request.user,
@@ -44,7 +59,7 @@ def _get_extraction_or_redirect(request, publication):
     if not has_assignment:
         return None, redirect('contributor:publication_detail', pk=publication.pk)
 
-    extraction, created = ExtractionRecord.objects.get_or_create(
+    extraction, _ = ExtractionRecord.objects.get_or_create(
         publication=publication,
         reviewer=request.user,
         defaults={'reviewer_type': 'human', 'status': 'draft'},
@@ -61,7 +76,6 @@ def _check_not_locked(publication, request):
 
 
 def _tools_context(extraction):
-    """Returns context needed to render the tools section partial."""
     return {
         'tool_usages': AssessmentToolUsage.objects.filter(
             extraction=extraction
@@ -70,6 +84,7 @@ def _tools_context(extraction):
         'outcome_form': OutcomeDomainForm(),
         'extraction': extraction,
         'publication': extraction.publication,
+        'extraction_id': extraction.pk if extraction.reviewer_type == 'llm' else '',
     }
 
 
@@ -79,6 +94,7 @@ def _statistical_context(extraction):
         'statistical_form': StatisticalMethodForm(),
         'extraction': extraction,
         'publication': extraction.publication,
+        'extraction_id': extraction.pk if extraction.reviewer_type == 'llm' else '',
     }
 
 
@@ -88,6 +104,7 @@ def _predictors_context(extraction):
         'predictor_form': PredictorCovariateForm(),
         'extraction': extraction,
         'publication': extraction.publication,
+        'extraction_id': extraction.pk if extraction.reviewer_type == 'llm' else '',
     }
 
 
@@ -100,6 +117,7 @@ def _rob_context(extraction):
         'rob_domains': RiskOfBiasDomain.objects.filter(assessment=rob),
         'extraction': extraction,
         'publication': extraction.publication,
+        'extraction_id': extraction.pk if extraction.reviewer_type == 'llm' else '',
     }
 
 
@@ -331,59 +349,73 @@ def delete_pdf(request, pk):
 # ---------------------------------------------------------------------------
 
 @login_required
-def extraction_form(request, pk):
+def extraction_form(request, pk, extraction_id=None):
     publication = get_object_or_404(Publication, pk=pk)
 
     lock_response = _check_not_locked(publication, request)
     if lock_response:
         return lock_response
 
-    has_assignment = PublicationAssignment.objects.filter(
-        publication=publication,
-        assigned_to=request.user,
-    ).exists()
-    if not has_assignment:
-        from django.contrib import messages
-        messages.error(request, 'You are not assigned to this paper.')
-        return redirect('contributor:publication_detail', pk=pk)
-
-    extraction, _ = ExtractionRecord.objects.get_or_create(
-        publication=publication,
-        reviewer=request.user,
-        defaults={'reviewer_type': 'human', 'status': 'draft'},
-    )
-
-    current_state = get_current_state(publication)
-    if current_state == 'assigned':
-        transition(
+    # LLM extraction editing — requires editor/reviewer/staff
+    if extraction_id:
+        if not (request.user.is_staff or
+                request.user.groups.filter(name='Editor').exists() or
+                request.user.groups.filter(name='Reviewer').exists()):
+            from django.contrib import messages
+            messages.error(request, 'You do not have permission to edit LLM extractions.')
+            return redirect('contributor:publication_detail', pk=pk)
+        extraction = get_object_or_404(
+            ExtractionRecord,
+            pk=extraction_id,
             publication=publication,
-            to_state='in_progress',
-            actor=request.user,
-            comment='Extraction form opened.',
+            reviewer_type='llm',
         )
+
+    # Human extraction — requires assignment
+    else:
+        has_assignment = PublicationAssignment.objects.filter(
+            publication=publication,
+            assigned_to=request.user,
+        ).exists()
+        if not has_assignment:
+            from django.contrib import messages
+            messages.error(request, 'You are not assigned to this paper.')
+            return redirect('contributor:publication_detail', pk=pk)
+
+        extraction, _ = ExtractionRecord.objects.get_or_create(
+            publication=publication,
+            reviewer=request.user,
+            defaults={'reviewer_type': 'human', 'status': 'draft'},
+        )
+
+        current_state = get_current_state(publication)
+        if current_state == 'assigned':
+            transition(
+                publication=publication,
+                to_state='in_progress',
+                actor=request.user,
+                comment='Extraction form opened.',
+            )
 
     study_profile, _ = StudyProfile.objects.get_or_create(extraction=extraction)
     demographics, _ = StudyDemographics.objects.get_or_create(study_profile=study_profile)
     rob, _ = RiskOfBiasAssessment.objects.get_or_create(extraction=extraction)
     latest_review = extraction.reviews.order_by('-submitted_at').first()
+    llm_extraction_id = extraction.pk if extraction.reviewer_type == 'llm' else ''
 
     return render(request, 'contributor/extraction_form.html', {
         'publication': publication,
         'extraction': extraction,
         'latest_review': latest_review,
-        # Study profile
+        'extraction_id': llm_extraction_id,
         'study_form': StudyProfileForm(instance=study_profile),
         'demographics_form': StudyDemographicsForm(instance=demographics),
-        # Risk of bias
         'rob_form': RiskOfBiasForm(instance=rob),
         'rob_domain_form': RiskOfBiasDomainForm(),
         'rob_domains': RiskOfBiasDomain.objects.filter(assessment=rob),
         'rob': rob,
-        # Tools
         **_tools_context(extraction),
-        # Statistical methods
         **_statistical_context(extraction),
-        # Predictors
         **_predictors_context(extraction),
     })
 
