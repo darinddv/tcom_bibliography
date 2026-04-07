@@ -34,6 +34,7 @@ urlpatterns = [
 
     # --- Extraction form ---
     path('publications/<int:pk>/extract/', views.extraction_form, name='extraction_form'),
+    path('publications/<int:pk>/extract/<int:extraction_id>/', views.extraction_form, name='edit_extraction'),
     path('publications/<int:pk>/extract/llm/<int:extraction_id>/', views.extraction_form, name='llm_extraction_form'),
 
     # Combined save for study profile + demographics + RoB header

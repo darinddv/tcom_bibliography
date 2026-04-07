@@ -51,6 +51,11 @@ def publication_detail(request, pk):
         publication=publication,
     ).select_related('reviewer')
 
+    human_extraction = ExtractionRecord.objects.filter(
+        publication=publication,
+        reviewer_type='human',
+    ).first()
+
     latest_transition = publication.transitions.order_by('-timestamp').first()
     current_state = latest_transition.to_state if latest_transition else 'unassigned'
 
@@ -59,6 +64,7 @@ def publication_detail(request, pk):
         'active_assignment': active_assignment,
         'any_assignment': any_assignment,
         'user_extraction': user_extraction,
+        'human_extraction': human_extraction,
         'can_unassign': can_unassign,
         'extractions': extractions,
         'current_state': current_state,
