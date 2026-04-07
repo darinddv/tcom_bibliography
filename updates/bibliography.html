@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block nav_bibliography %}active{% endblock %}
+{% block title %}Bibliography — TCOM Bibliography{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Bibliography</h2>
+    <span class="text-muted small">{{ total }} publication{{ total|pluralize }}</span>
+</div>
+
+<div class="row g-4">
+
+    <!-- Filter panel -->
+    <div class="col-md-3">
+        <div class="card sticky-top" style="top:1rem">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 small">Filters</h6>
+                {% if active_filters %}
+                <a href="{% url 'contributor:bibliography' %}"
+                   class="text-muted small text-decoration-none">
+                    Clear all
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-3">
+                <form method="get" action="{% url 'contributor:bibliography' %}">
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Search</label>
+                        <input type="text" name="q" value="{{ q }}"
+                               class="form-control form-control-sm"
+                               placeholder="Title, abstract, DOI...">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Assessment Tool</label>
+                        <select name="tool"
+                                class="form-select form-select-sm ts-select"
+                                data-placeholder="Any tool">
+                            <option value="">Any tool</option>
+                            {% for tool in tools %}
+                            <option value="{{ tool.pk }}"
+                                {% if request.GET.tool == tool.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ tool.abbreviation|default:tool.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Setting</label>
+                        <select name="setting"
+                                class="form-select form-select-sm ts-select"
+                                data-placeholder="Any setting">
+                            <option value="">Any setting</option>
+                            {% for s in settings %}
+                            <option value="{{ s.pk }}"
+                                {% if request.GET.setting == s.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ s.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Study Design</label>
+                        <select name="design"
+                                class="form-select form-select-sm ts-select"
+                                data-placeholder="Any design">
+                            <option value="">Any design</option>
+                            {% for d in study_designs %}
+                            <option value="{{ d.pk }}"
+                                {% if request.GET.design == d.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ d.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Population</label>
+                        <select name="population"
+                                class="form-select form-select-sm ts-select"
+                                data-placeholder="Any population">
+                            <option value="">Any population</option>
+                            {% for p in population_types %}
+                            <option value="{{ p.pk }}"
+                                {% if request.GET.population == p.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ p.label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Publication Type</label>
+                        <select name="type" class="form-select form-select-sm">
+                            <option value="">Any type</option>
+                            {% for value, label in pub_type_choices %}
+                            <option value="{{ value }}"
+                                {% if request.GET.type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">Any status</option>
+                            <option value="included"
+                                {% if request.GET.status == 'included' %}selected{% endif %}>
+                                Included
+                            </option>
+                            <option value="candidate"
+                                {% if request.GET.status == 'candidate' %}selected{% endif %}>
+                                Candidate
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted mb-1">Year Range</label>
+                        <div class="row g-1">
+                            <div class="col-6">
+                                <input type="number" name="year_from"
+                                       value="{{ request.GET.year_from }}"
+                                       class="form-control form-control-sm"
+                                       placeholder="From">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="year_to"
+                                       value="{{ request.GET.year_to }}"
+                                       class="form-control form-control-sm"
+                                       placeholder="To">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark btn-sm w-100">
+                        Apply Filters
+                    </button>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="col-md-9">
+
+        <!-- Sort / active filters bar -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                {% if active_filters %}
+                <span class="text-muted small">
+                    {% if active_filters.q %}
+                        <span class="badge bg-secondary me-1">
+                            "{{ active_filters.q }}"
+                        </span>
+                    {% endif %}
+                    {% if active_filters.tool %}
+                        <span class="badge bg-secondary me-1">Tool</span>
+                    {% endif %}
+                    {% if active_filters.setting %}
+                        <span class="badge bg-secondary me-1">Setting</span>
+                    {% endif %}
+                    {% if active_filters.design %}
+                        <span class="badge bg-secondary me-1">Study Design</span>
+                    {% endif %}
+                    {% if active_filters.population %}
+                        <span class="badge bg-secondary me-1">Population</span>
+                    {% endif %}
+                    {% if active_filters.type %}
+                        <span class="badge bg-secondary me-1">Type</span>
+                    {% endif %}
+                    {% if active_filters.status %}
+                        <span class="badge bg-secondary me-1">Status</span>
+                    {% endif %}
+                    {% if active_filters.year_from or active_filters.year_to %}
+                        <span class="badge bg-secondary me-1">Year</span>
+                    {% endif %}
+                </span>
+                {% endif %}
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="small text-muted mb-0">Sort:</label>
+                <select class="form-select form-select-sm"
+                        style="width:auto"
+                        onchange="
+                            var params = new URLSearchParams(window.location.search);
+                            params.set('sort', this.value);
+                            window.location.href = '{% url 'contributor:bibliography' %}?' + params.toString();
+                        ">
+                    <option value="-year"
+                        {% if sort == '-year' %}selected{% endif %}>
+                        Year (newest)
+                    </option>
+                    <option value="year"
+                        {% if sort == 'year' %}selected{% endif %}>
+                        Year (oldest)
+                    </option>
+                    <option value="title"
+                        {% if sort == 'title' %}selected{% endif %}>
+                        Title (A–Z)
+                    </option>
+                    <option value="-created_at"
+                        {% if sort == '-created_at' %}selected{% endif %}>
+                        Recently added
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        {% if publications %}
+        <div class="card">
+            {% for pub in publications %}
+            <div class="p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="flex-grow-1">
+                        <a href="{% url 'contributor:bibliography_detail' pub.pk %}"
+                           class="fw-medium text-decoration-none d-block mb-1">
+                            {{ pub.title }}
+                        </a>
+                        <div class="text-muted small">
+                            {% if pub.year %}{{ pub.year }}{% endif %}
+                            {% if pub.journal %} · {{ pub.journal }}{% endif %}
+                            {% if pub.doi %}
+                                · <a href="https://doi.org/{{ pub.doi }}"
+                                     target="_blank"
+                                     class="text-muted text-decoration-none">
+                                    DOI
+                                    <i class="bi bi-box-arrow-up-right ms-1"
+                                       style="font-size:0.7rem"></i>
+                                  </a>
+                            {% endif %}
+                        </div>
+                        {% if pub.abstract %}
+                        <p class="small text-muted mt-1 mb-0">
+                            {{ pub.abstract|truncatechars:180 }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex flex-column gap-1 flex-shrink-0 align-items-end">
+                        {% if pub.inclusion_status == 'included' %}
+                            <span class="badge bg-success">Included</span>
+                        {% elif pub.inclusion_status == 'candidate' %}
+                            <span class="badge bg-warning text-dark">Candidate</span>
+                        {% endif %}
+                        <span class="badge bg-light text-dark border small">
+                            {{ pub.get_publication_type_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-search fs-1 d-block mb-3"></i>
+            <p>No publications match your filters.</p>
+            <a href="{% url 'contributor:bibliography' %}"
+               class="btn btn-outline-secondary btn-sm">
+                Clear filters
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

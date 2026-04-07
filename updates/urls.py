@@ -32,34 +32,23 @@ urlpatterns = [
     path('publications/<int:pk>/delete-pdf/', views.delete_pdf, name='delete_pdf'),
     path('publications/<int:pk>/run-llm/', views.run_llm_extraction_view, name='run_llm_extraction'),
 
-    # --- Extraction form ---
+    # --- Extraction form (HTMX) ---
     path('publications/<int:pk>/extract/', views.extraction_form, name='extraction_form'),
     path('publications/<int:pk>/extract/llm/<int:extraction_id>/', views.extraction_form, name='llm_extraction_form'),
-
-    # Combined save for study profile + demographics + RoB header
-    # Handles both auto-save (HTMX) and the Save Draft button
-    path('publications/<int:pk>/extract/save/', views.save_extraction, name='save_extraction'),
-
-    # HTMX dynamic sections — RoB domains
+    path('publications/<int:pk>/extract/study-profile/', views.save_study_profile, name='save_study_profile'),
+    path('publications/<int:pk>/extract/demographics/', views.save_demographics, name='save_demographics'),
+    path('publications/<int:pk>/extract/risk-of-bias/', views.save_risk_of_bias, name='save_risk_of_bias'),
     path('publications/<int:pk>/extract/risk-of-bias/add-domain/', views.add_rob_domain, name='add_rob_domain'),
     path('publications/<int:pk>/extract/risk-of-bias/delete-domain/<int:domain_id>/', views.delete_rob_domain, name='delete_rob_domain'),
-
-    # HTMX dynamic sections — tools and outcomes
     path('publications/<int:pk>/extract/tools/', views.tools_section, name='tools_section'),
     path('publications/<int:pk>/extract/tools/add/', views.add_tool_usage, name='add_tool_usage'),
     path('publications/<int:pk>/extract/tools/<int:tool_usage_id>/delete/', views.delete_tool_usage, name='delete_tool_usage'),
     path('publications/<int:pk>/extract/tools/<int:tool_usage_id>/outcomes/add/', views.add_outcome_domain, name='add_outcome_domain'),
     path('publications/<int:pk>/extract/tools/<int:tool_usage_id>/outcomes/<int:outcome_id>/delete/', views.delete_outcome_domain, name='delete_outcome_domain'),
-
-    # HTMX dynamic sections — statistical methods
     path('publications/<int:pk>/extract/statistical-methods/add/', views.add_statistical_method, name='add_statistical_method'),
     path('publications/<int:pk>/extract/statistical-methods/<int:method_id>/delete/', views.delete_statistical_method, name='delete_statistical_method'),
-
-    # HTMX dynamic sections — predictors
     path('publications/<int:pk>/extract/predictors/add/', views.add_predictor, name='add_predictor'),
     path('publications/<int:pk>/extract/predictors/<int:predictor_id>/delete/', views.delete_predictor, name='delete_predictor'),
-
-    # Submit for review
     path('publications/<int:pk>/extract/submit/', views.submit_extraction_view, name='submit_extraction'),
 
     # --- Review ---

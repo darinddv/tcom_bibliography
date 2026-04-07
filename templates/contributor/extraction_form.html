@@ -1,25 +1,37 @@
 {% extends "base.html" %}
-{% block nav_dashboard %}active{% endblock %}
+{% block nav_work %}active{% endblock %}
 {% block title %}Extract — {{ publication.title|truncatechars:50 }}{% endblock %}
 
 {% block content %}
 
 <!-- Header -->
-<div class="mb-4">
-    <a href="{% url 'contributor:dashboard' %}"
-       class="text-muted text-decoration-none small">
-        <i class="bi bi-arrow-left me-1"></i>Dashboard
-    </a>
-    <h2 class="mt-2 mb-1">
-        Extraction Form
-        {% if extraction.reviewer_type == 'llm' %}
-            <span class="badge bg-info text-dark ms-2 fs-6">
-                <i class="bi bi-robot me-1"></i>LLM Extraction
-            </span>
-        {% endif %}
-    </h2>
-    <p class="text-muted mb-0">{{ publication.title|truncatechars:100 }}</p>
-    <span class="badge bg-secondary mt-1">{{ extraction.get_status_display }}</span>
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <a href="{% url 'contributor:work' %}"
+           class="text-muted text-decoration-none small">
+            <i class="bi bi-arrow-left me-1"></i>My Work
+        </a>
+        <h2 class="mt-2 mb-1">
+            Extraction Form
+            {% if extraction.reviewer_type == 'llm' %}
+                <span class="badge bg-info text-dark ms-2 fs-6">
+                    <i class="bi bi-robot me-1"></i>LLM Extraction
+                </span>
+            {% endif %}
+        </h2>
+        <p class="text-muted mb-0">{{ publication.title|truncatechars:100 }}</p>
+        <span class="badge bg-secondary mt-1">{{ extraction.get_status_display }}</span>
+    </div>
+    <div class="d-flex align-items-center gap-3 mt-1">
+        <span id="save-indicator" class="text-muted small" style="display:none">
+            <i class="bi bi-check-circle text-success me-1"></i>Saved
+        </span>
+        <button type="submit"
+                form="main-extraction-form"
+                class="btn btn-outline-primary">
+            <i class="bi bi-floppy me-1"></i>Save Draft
+        </button>
+    </div>
 </div>
 
 <!-- Reviewer feedback -->
@@ -49,18 +61,25 @@
 {% endif %}
 
 <!-- ------------------------------------------------------------------ -->
-<!-- STUDY PROFILE                                                        -->
+<!-- COMBINED AUTO-SAVE FORM                                              -->
+<!-- Study Profile + Demographics + Risk of Bias header                  -->
+<!-- One form, one endpoint, one debounce timer                          -->
 <!-- ------------------------------------------------------------------ -->
-<div class="card mb-4">
-    <div class="card-header bg-white">
-        <h6 class="mb-0"><i class="bi bi-clipboard2 me-2"></i>Study Profile</h6>
-    </div>
-    <div class="card-body">
-        <form hx-post="{% url 'contributor:save_study_profile' publication.pk %}"
-              hx-trigger="change delay:800ms"
-              hx-swap="none">
-            {% csrf_token %}
-            <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
+<form id="main-extraction-form"
+      hx-post="{% url 'contributor:save_extraction' publication.pk %}"
+      hx-trigger="submit, input delay:800ms, change"
+      hx-swap="none">
+    {% csrf_token %}
+    <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
+
+    <!-- STUDY PROFILE -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">
+                <i class="bi bi-clipboard2 me-2"></i>Study Profile
+            </h6>
+        </div>
+        <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label small">Study Design</label>
@@ -111,23 +130,17 @@
                     {{ study_form.notes }}
                 </div>
             </div>
-        </form>
+        </div>
     </div>
-</div>
 
-<!-- ------------------------------------------------------------------ -->
-<!-- DEMOGRAPHICS                                                         -->
-<!-- ------------------------------------------------------------------ -->
-<div class="card mb-4">
-    <div class="card-header bg-white">
-        <h6 class="mb-0"><i class="bi bi-people me-2"></i>Participant Demographics</h6>
-    </div>
-    <div class="card-body">
-        <form hx-post="{% url 'contributor:save_demographics' publication.pk %}"
-              hx-trigger="change delay:800ms"
-              hx-swap="none">
-            {% csrf_token %}
-            <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
+    <!-- DEMOGRAPHICS -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">
+                <i class="bi bi-people me-2"></i>Participant Demographics
+            </h6>
+        </div>
+        <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label small">% Female</label>
@@ -158,23 +171,17 @@
                     {{ demographics_form.notes }}
                 </div>
             </div>
-        </form>
+        </div>
     </div>
-</div>
 
-<!-- ------------------------------------------------------------------ -->
-<!-- RISK OF BIAS                                                         -->
-<!-- ------------------------------------------------------------------ -->
-<div class="card mb-4">
-    <div class="card-header bg-white">
-        <h6 class="mb-0"><i class="bi bi-shield-check me-2"></i>Risk of Bias</h6>
-    </div>
-    <div class="card-body">
-        <form hx-post="{% url 'contributor:save_risk_of_bias' publication.pk %}"
-              hx-trigger="change delay:800ms"
-              hx-swap="none">
-            {% csrf_token %}
-            <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
+    <!-- RISK OF BIAS HEADER -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0">
+                <i class="bi bi-shield-check me-2"></i>Risk of Bias
+            </h6>
+        </div>
+        <div class="card-body">
             <div class="row g-3 mb-3">
                 <div class="col-md-4">
                     <label class="form-label small">Framework</label>
@@ -189,19 +196,30 @@
                     {{ rob_form.notes }}
                 </div>
             </div>
-        </form>
+        </div>
+    </div>
 
-        <h6 class="small text-muted mt-3 mb-2">Domain Ratings</h6>
+</form>
+<!-- End combined auto-save form -->
+
+<!-- RoB domains — outside main form to avoid nested <form> -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h6 class="small text-muted mb-2">
+            <i class="bi bi-shield-check me-2"></i>Risk of Bias — Domain Ratings
+        </h6>
         {% include 'contributor/partials/rob_section.html' %}
     </div>
 </div>
 
 <!-- ------------------------------------------------------------------ -->
-<!-- ASSESSMENT TOOLS                                                     -->
+<!-- ASSESSMENT TOOLS — own HTMX partial, not inside combined form       -->
 <!-- ------------------------------------------------------------------ -->
 <div class="card mb-4">
     <div class="card-header bg-white">
-        <h6 class="mb-0"><i class="bi bi-tools me-2"></i>Assessment Tools</h6>
+        <h6 class="mb-0">
+            <i class="bi bi-tools me-2"></i>Assessment Tools
+        </h6>
     </div>
     <div class="card-body">
         {% include 'contributor/partials/tools_section.html' %}
@@ -213,7 +231,9 @@
 <!-- ------------------------------------------------------------------ -->
 <div class="card mb-4">
     <div class="card-header bg-white">
-        <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Statistical Methods</h6>
+        <h6 class="mb-0">
+            <i class="bi bi-graph-up me-2"></i>Statistical Methods
+        </h6>
     </div>
     <div class="card-body">
         {% include 'contributor/partials/statistical_section.html' %}
@@ -225,7 +245,9 @@
 <!-- ------------------------------------------------------------------ -->
 <div class="card mb-4">
     <div class="card-header bg-white">
-        <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Predictors / Covariates</h6>
+        <h6 class="mb-0">
+            <i class="bi bi-diagram-3 me-2"></i>Predictors / Covariates
+        </h6>
     </div>
     <div class="card-body">
         {% include 'contributor/partials/predictors_section.html' %}
@@ -240,10 +262,11 @@
     <div class="card-body">
         <h6 class="card-title">Ready to submit?</h6>
         <p class="card-text text-muted small">
-            Study profile and demographics save automatically as you type.
-            Make sure all sections are complete before submitting.
+            Fields save automatically as you edit, or use Save Draft above.
+            Make sure all sections are complete before submitting for review.
         </p>
-        <form method="post" action="{% url 'contributor:submit_extraction' publication.pk %}">
+        <form method="post"
+              action="{% url 'contributor:submit_extraction' publication.pk %}">
             {% csrf_token %}
             <input type="hidden" name="extraction_id" value="{{ extraction_id }}">
             <button type="submit" class="btn btn-primary">
@@ -268,8 +291,9 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('htmx:afterSwap', function(evt) {
-        evt.detail.target.querySelectorAll('select.ts-select').forEach(function(el) {
+    // Re-initialize Tom Select on HTMX-swapped partials
+    document.addEventListener('htmx:afterSwap', function (evt) {
+        evt.detail.target.querySelectorAll('select.ts-select').forEach(function (el) {
             if (!el.tomselect) {
                 new TomSelect(el, {
                     allowEmptyOption: true,
@@ -277,6 +301,16 @@
                 });
             }
         });
+    });
+
+    // Show "Saved" indicator on successful save
+    document.addEventListener('htmx:afterRequest', function (evt) {
+        if (evt.detail.xhr.status === 204 &&
+            evt.detail.elt.id === 'main-extraction-form') {
+            var indicator = document.getElementById('save-indicator');
+            indicator.style.display = 'inline';
+            setTimeout(function () { indicator.style.display = 'none'; }, 2000);
+        }
     });
 </script>
 {% endblock %}

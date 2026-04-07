@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}TCOM Bibliography{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-8 text-center">
+
+        <i class="bi bi-journal-bookmark-fill display-1 text-dark mb-4 d-block"></i>
+        <h1 class="fw-bold mb-3">TCOM Bibliography</h1>
+        <p class="lead text-muted mb-5">
+            A systematic review database of published research on TCOM assessment tools —
+            CANS, ANSA, CAFAS, and related instruments used in child behavioral health settings.
+        </p>
+
+        <!-- Stats -->
+        <div class="row g-3 mb-5 justify-content-center">
+            <div class="col-md-4">
+                <div class="card py-3">
+                    <div class="display-6 fw-bold text-dark">{{ stats.publication_count }}</div>
+                    <div class="text-muted small">Publications indexed</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card py-3">
+                    <div class="display-6 fw-bold text-success">{{ stats.included_count }}</div>
+                    <div class="text-muted small">Included studies</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card py-3">
+                    <div class="display-6 fw-bold text-primary">{{ stats.tool_count }}</div>
+                    <div class="text-muted small">Assessment tools covered</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{% url 'contributor:bibliography' %}"
+               class="btn btn-dark btn-lg px-4">
+                <i class="bi bi-journals me-2"></i>Browse Bibliography
+            </a>
+            <a href="{% url 'contributor:analytics' %}"
+               class="btn btn-outline-dark btn-lg px-4">
+                <i class="bi bi-bar-chart me-2"></i>View Dashboard
+            </a>
+            <a href="{% url 'contributor:register' %}"
+               class="btn btn-outline-secondary btn-lg px-4">
+                <i class="bi bi-person-plus me-2"></i>Create Account
+            </a>
+        </div>
+
+        <p class="text-muted small mt-4">
+            Already have an account?
+            <a href="{% url 'accounts:login' %}">Log in</a>
+        </p>
+
+    </div>
+</div>
+{% endblock %}

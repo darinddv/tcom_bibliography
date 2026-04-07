@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block nav_bibliography %}active{% endblock %}
+{% block title %}{{ publication.title|truncatechars:60 }} — TCOM Bibliography{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <a href="{% url 'contributor:bibliography' %}"
+       class="text-muted text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>Bibliography
+    </a>
+    <h2 class="mt-2 mb-1">{{ publication.title }}</h2>
+    <div class="text-muted small">
+        {% if publication.year %}{{ publication.year }}{% endif %}
+        {% if publication.journal %} · {{ publication.journal }}{% endif %}
+    </div>
+    <div class="mt-2 d-flex gap-2 flex-wrap">
+        {% if publication.inclusion_status == 'included' %}
+            <span class="badge bg-success">Included</span>
+        {% elif publication.inclusion_status == 'candidate' %}
+            <span class="badge bg-warning text-dark">Candidate</span>
+        {% endif %}
+        <span class="badge bg-light text-dark border">
+            {{ publication.get_publication_type_display }}
+        </span>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Main column -->
+    <div class="col-md-8">
+
+        {% if publication.abstract %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title text-muted text-uppercase small mb-3">Abstract</h6>
+                <p class="card-text">{{ publication.abstract }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title text-muted text-uppercase small mb-3">Details</h6>
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-muted" style="width:140px">DOI</td>
+                        <td>
+                            {% if publication.doi %}
+                                <a href="https://doi.org/{{ publication.doi }}"
+                                   target="_blank"
+                                   class="text-decoration-none">
+                                    {{ publication.doi }}
+                                    <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                                </a>
+                            {% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Volume / Issue</td>
+                        <td>
+                            {% if publication.volume %}Vol. {{ publication.volume }}{% endif %}
+                            {% if publication.issue %}, No. {{ publication.issue }}{% endif %}
+                            {% if not publication.volume and not publication.issue %}—{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Pages</td>
+                        <td>{{ publication.pages|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Language</td>
+                        <td>{{ publication.language|default:"—" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Extracted data from approved extractions -->
+        {% if extractions %}
+        {% for extraction in extractions %}
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-clipboard2-check me-2"></i>Extracted Data
+                </h6>
+                {% if extraction.reviewer_type == 'llm' %}
+                    <span class="badge bg-info text-dark small">
+                        <i class="bi bi-robot me-1"></i>AI Assisted
+                    </span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+
+                <!-- Study Profile -->
+                {% with sp=extraction.study_profile %}
+                {% if sp %}
+                <h6 class="small text-muted text-uppercase mb-2 mt-1">Study Profile</h6>
+                <table class="table table-sm mb-3">
+                    {% if sp.study_design %}
+                    <tr>
+                        <td class="text-muted" style="width:180px">Study Design</td>
+                        <td>{{ sp.study_design }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if sp.overall_sample_size %}
+                    <tr>
+                        <td class="text-muted">Sample Size</td>
+                        <td>{{ sp.overall_sample_size }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if sp.setting %}
+                    <tr>
+                        <td class="text-muted">Setting</td>
+                        <td>{{ sp.setting }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if sp.country %}
+                    <tr>
+                        <td class="text-muted">Country</td>
+                        <td>
+                            {{ sp.country }}
+                            {% if sp.us_state %} — {{ sp.get_us_state_display }}{% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if sp.funding_source %}
+                    <tr>
+                        <td class="text-muted">Funding</td>
+                        <td>{{ sp.get_funding_source_display }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+
+                    <!-- Demographics -->
+                    {% with demo=sp.demographics %}
+                    {% if demo and demo.percent_female or demo.age_range_min or demo.age_range_max %}
+                    <h6 class="small text-muted text-uppercase mb-2">Demographics</h6>
+                    <table class="table table-sm mb-3">
+                        {% if demo.percent_female or demo.percent_male %}
+                        <tr>
+                            <td class="text-muted" style="width:180px">Gender</td>
+                            <td>
+                                {% if demo.percent_female %}{{ demo.percent_female }}% female{% endif %}
+                                {% if demo.percent_male %} · {{ demo.percent_male }}% male{% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if demo.age_range_min or demo.age_range_max %}
+                        <tr>
+                            <td class="text-muted">Age Range</td>
+                            <td>
+                                {{ demo.age_range_min|default:"?" }}–{{ demo.age_range_max|default:"?" }}
+                                {% if demo.age_notes %}
+                                    <span class="text-muted small ms-1">({{ demo.age_notes }})</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if demo.race_distribution %}
+                        <tr>
+                            <td class="text-muted">Race / Ethnicity</td>
+                            <td>{{ demo.race_distribution }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                    {% endif %}
+                    {% endwith %}
+
+                {% endif %}
+                {% endwith %}
+
+                <!-- Assessment Tools and Outcomes -->
+                {% if extraction.assessment_tool_usages.all %}
+                <h6 class="small text-muted text-uppercase mb-2">Assessment Tools</h6>
+                {% for usage in extraction.assessment_tool_usages.all %}
+                <div class="mb-3 ps-3 border-start border-3">
+                    <div class="fw-medium mb-1">
+                        {{ usage.tool.abbreviation|default:usage.tool.label }}
+                        <span class="text-muted small ms-2">
+                            {{ usage.get_used_as_display }}
+                        </span>
+                        {% if usage.sample_size %}
+                            <span class="text-muted small ms-2">n={{ usage.sample_size }}</span>
+                        {% endif %}
+                        {% if usage.age_range_min or usage.age_range_max %}
+                            <span class="text-muted small ms-2">
+                                Ages {{ usage.age_range_min|default:"?" }}–{{ usage.age_range_max|default:"?" }}
+                            </span>
+                        {% endif %}
+                        {% if usage.population_type %}
+                            <span class="text-muted small ms-2">
+                                · {{ usage.population_type.label }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% if usage.outcome_domains.all %}
+                    <div class="mt-1 d-flex flex-wrap gap-1">
+                        {% for outcome in usage.outcome_domains.all %}
+                        <span class="badge bg-light text-dark border">
+                            {{ outcome.domain.label }}
+                            {% if outcome.direction %}
+                                <span class="text-muted">
+                                    — {{ outcome.get_direction_display }}
+                                </span>
+                            {% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                <!-- Statistical Methods -->
+                {% if extraction.statistical_methods.all %}
+                <h6 class="small text-muted text-uppercase mb-2 mt-3">Statistical Methods</h6>
+                <div class="d-flex flex-wrap gap-1">
+                    {% for method in extraction.statistical_methods.all %}
+                    <span class="badge bg-light text-dark border">
+                        {% if method.method_name %}
+                            {{ method.method_name.abbreviation|default:method.method_name.label }}
+                        {% else %}
+                            {{ method.get_method_category_display }}
+                        {% endif %}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card mb-4">
+            <div class="card-body text-muted small">
+                <i class="bi bi-hourglass me-2"></i>
+                No approved extractions yet for this publication.
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Right column -->
+    <div class="col-md-4">
+
+        {% if publication.pdf_file %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <a href="{{ publication.pdf_file.url }}"
+                   target="_blank"
+                   class="btn btn-outline-primary w-100">
+                    <i class="bi bi-file-pdf me-2"></i>Download PDF
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Contributor shortcut to internal view -->
+        {% if is_contributor %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <p class="small text-muted mb-2">Contributor tools</p>
+                <a href="{% url 'contributor:publication_detail' publication.pk %}"
+                   class="btn btn-outline-secondary w-100 btn-sm">
+                    <i class="bi bi-gear me-2"></i>Open in Workflow
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+{% endblock %}
